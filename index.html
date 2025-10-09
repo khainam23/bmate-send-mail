@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Opt-in Form</title>
+    <style type="text/css">
+        p {
+            margin: 0px;
+            padding: 0px;
+        }
+
+        .multi-select-container {
+            display: inline-block;
+            position: relative;
+            width: 100%;
+        }
+
+        .multi-select-menu {
+            position: absolute;
+            left: 0;
+            top: 2.1em;
+            float: left;
+            min-width: 99.5%;
+            background: #fff;
+            margin: 1em 0;
+            padding: 0.4em 0;
+            border: 1px solid #aaa;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1;
+        }
+
+        .multi-select-menu input {
+            margin-right: 0.3em;
+            vertical-align: 0.1em;
+        }
+
+        .multi-select-button {
+            display: inline-block;
+            padding: 0.2em 0.6em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: -0.5em;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            cursor: default;
+            width: 94.3%;
+            font-size: 13px;
+            padding-left: 15px;
+        }
+
+        .multi-select-button:after {
+            content: "";
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0.4em 0.4em 0 0.4em;
+            border-color: #999 transparent transparent transparent;
+            float: right;
+            margin-top: 14px;
+        }
+
+        .multi-select-container--open .multi-select-menu {
+            display: block;
+        }
+
+        .multi-select-container--open .multi-select-button:after {
+            border-width: 0 0.4em 0.4em 0.4em;
+            border-color: transparent transparent #999 transparent;
+        }
+
+        .multi-select-menuitem {
+            width: 100%;
+        }
+
+        .selectBox {
+            position: relative;
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://bmate.getflycrm.com/assets/forms/fontawesome/css/all.css">
+    <style type="text/css">
+        .getfly-form {
+            max-width: 450px !important;
+            margin: 0 auto;
+            padding: 25px !important;
+            font-size: 12px;
+            line-height: 30px !important;
+            color: #777;
+            border: 1px solid #eae6e6;
+            font-family: sans-serif;
+            background: #fff !important;
+        }
+
+        .getfly-input {
+            width: 95% !important;
+            border: 1px solid #CCC;
+            background: #FFF;
+            padding: 10px;
+            outline: 0;
+            color: #777
+        }
+
+        .getfly-select {
+            width: 97.5% !important;
+            border: 1px solid #CCC;
+            background: #FFF;
+            padding: 10px 0px 10px 10px;
+            outline: 0;
+            color: #777
+        }
+
+        .getfly-textarea {
+            width: 97.5% !important;
+            border: 1px solid #CCC;
+            background: #FFF;
+            padding: 10px 5px;
+            outline: 0;
+            height: 50px;
+        }
+
+        .getfly-button {
+            cursor: pointer;
+            border: none;
+            background: #f58632;
+            color: #FFF;
+            padding: 10px 20px;
+            font-size: 18px;
+            outline: 0;
+            font-family: sans-serif;
+        }
+
+        .getfly-span {
+            color: #f58632;
+            font-size: 20px;
+            font-weight: bold;
+            float: none !important;
+        }
+
+        .getfly-label {
+            display: block !important;
+        }
+
+        .getfly-mt10 {
+            margin-top: 10px;
+        }
+
+        .getfly-label-c {
+            color: #777 !important;
+        }
+
+        .getfly-span-c {
+            color: #f58632 !important;
+        }
+
+        .getfly-button-bg {
+            background: #f58632 !important;
+        }
+
+        .getfly-form input,
+        select,
+        textarea {
+            border: 1px solid #ccc !important;
+        }
+
+        @media (max-width: 480px) {
+            .getfly-input {
+                width: 93% !important;
+            }
+
+            .getfly-textarea {
+                width: 96% !important;
+            }
+        }
+
+        .getfly-margin {
+            margin: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="getfly-optin-form"
+        data-options='{"customFields":[],"fields":[{"type":"datetime","key":"ngay_khach_contact","label":"Nga\u0300y kha\u0301ch contact","require":true},{"type":"input","key":"account_name","label":"T\u00ean kh\u00e1ch h\u00e0ng","require":true},{"value":[{"field_id":114,"list_option_id":11,"list_value":"\u0110i ho\u0323c"},{"field_id":114,"list_option_id":12,"list_value":"\u0110i la\u0300m"},{"field_id":114,"list_option_id":13,"list_value":"Working Holiday"},{"field_id":114,"list_option_id":14,"list_value":"Ti\u0323 na\u0323n"},{"field_id":114,"list_option_id":15,"list_value":"Gia\u0309i tri\u0301"},{"field_id":114,"list_option_id":16,"list_value":"Phu\u0323 thu\u00f4\u0323c"},{"field_id":114,"list_option_id":17,"list_value":"SOFA"},{"field_id":114,"list_option_id":18,"list_value":"Kha\u0301c"}],"type":"select","multiple":false,"key":"visa","label":"Visa","require":false},{"type":"datetime","key":"ngay_du_kien_vao_nha","label":"Ng\u00e0y d\u1ef1 ki\u1ebfn v\u00e0o nh\u00e0","require":false},{"type":"numeric","key":"ngan_sach_tien_thue","label":"Ng\u00e2n sa\u0301ch ti\u00ea\u0300n thu\u00ea (\u00a5)","require":false},{"value":[{"field_id":112,"list_option_id":7,"list_value":"Overseas \/ Kaigai"},{"field_id":112,"list_option_id":8,"list_value":"\u0110ang \u01a1\u0309 Nh\u00e2\u0323t"}],"type":"select","multiple":false,"key":"overseas_dang_o_nhat","label":"\u0110ang \u01a1\u0309 \u0111\u00e2u?","require":false},{"value":[{"list_option_id":9,"list_value":"Cho\u0301"},{"list_option_id":10,"list_value":"Me\u0300o"}],"type":"checkbox","multiple":true,"key":"nuoi_pet","label":"Nu\u00f4i pet?","require":false},{"type":"textarea","key":"account_description","label":"M\u00f4 t\u1ea3 \u0111i\u1ec1u ki\u1ec7n","require":false},{"type":"email","key":"account_email","label":"Email","require":false},{"type":"phone","key":"account_phone","label":"\u0110i\u1ec7n tho\u1ea1i","require":true},{"value":[{"field_id":111,"list_option_id":1,"list_value":"Email"},{"field_id":111,"list_option_id":2,"list_value":"WhatsApp"},{"field_id":111,"list_option_id":3,"list_value":"LINE"},{"field_id":111,"list_option_id":4,"list_value":"Facebook"},{"field_id":111,"list_option_id":5,"list_value":"Instagram"},{"field_id":111,"list_option_id":6,"list_value":"Other"}],"type":"select","multiple":true,"key":"nen_tang_lien_he","label":"N\u00ea\u0300n ta\u0309ng li\u00ean h\u00ea\u0323","require":false}],"action":{"message_success":"\u0110\u0103ng k\u00fd th\u00e0nh c\u00f4ng"},"params":{"u":null,"r":null,"os":null,"source":"https:\/\/bmate.getflycrm.com","at":[],"key":"","ram":false},"hide":0,"text":"\u0110\u0103ng k\u00fd","type_css":"left","key":"QQtBtzyGuvbDiFLE0Z1w4IO8cCkc1c0V5XWyn8iNh7YeUk8HO6","upload_file":0,"utm_data":{"referrer":"https%3A%2F%2Fbmate.getflycrm.com","utm_source":null,"utm_campaign":null,"utm_medium":null,"utm_content":null,"utm_term":null},"verify_with_google_recaptcha":false,"measure_lead_with_pixel":0,"facebook_pixel_id":""}'>
+    </div>
+    <script src="https://bmate.getflycrm.com/assets/forms/gfformv3.min.js?v=lvb24"></script>
+</body>
+
+</html>

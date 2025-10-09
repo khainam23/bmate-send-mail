@@ -2,10 +2,13 @@ import imaplib
 import email
 from email.header import decode_header
 from typing import Final
+import time
+import json
+import re
+from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.core.config import settings
-
-# python -m app.jobs.read_sync_mail.index
 
 # ==============================
 # Cấu hình
@@ -14,38 +17,64 @@ IMAP_SERVER: Final = settings.HOST_IMAP
 EMAIL_ACCOUNT: Final = settings.EMAIL_ADDRESS
 EMAIL_PASSWORD: Final = settings.EMAIL_PASSWORD_APP
 WHERE_READ_EMAIL: str = 'INBOX'
-READ_TYPE_EMAIL: str = 'UNSEEN'
+READ_TYPE_EMAIL: str = 'ALL'
+
 
 class EmailExtract:
     def __init__(self):
         self.mail = imaplib.IMAP4_SSL(IMAP_SERVER)
         self.mail.login(EMAIL_ACCOUNT, EMAIL_PASSWORD)
         print("Đã đăng nhập thành công!")
-
-        # Chọn hộp thư INBOX
-        self.mail.select(WHERE_READ_EMAIL)
+        self.mail.select(WHERE_READ_EMAIL)  # READ-WRITE mode để có thể set Seen
 
     def list_email_ids(self, limit=None):
-        status, data = self.mail.search(None, READ_TYPE_EMAIL)
+        """Lấy danh sách email theo thời gian và giới hạn số lượng"""
+        # Thời gian bắt đầu (N phút trước), local timezone aware
+        time_range_minutes = settings.EMAIL_TIME_RANGE_MINUTES
+        since_time = (datetime.now().astimezone() - timedelta(minutes=time_range_minutes))  # aware datetime
+        
+        # Format ngày theo chuẩn IMAP (DD-Mon-YYYY)
+        since_date = since_time.strftime("%d-%b-%Y")
+        search_criteria = f'({READ_TYPE_EMAIL} SINCE {since_date})'
+        
+        status, data = self.mail.search(None, search_criteria)
         if status != "OK":
             print("Không lấy được email.")
             return []
 
         mail_ids = data[0].split()
+        filtered_ids = []
 
-        if limit is None:  
-            # Lấy tất cả
-            return mail_ids
-        else:              
-            # Lấy N email mới nhất
-            return mail_ids[-limit:]
-    
+        for mail_id in mail_ids:
+            status, data = self.mail.fetch(mail_id, '(INTERNALDATE)')
+            if status != "OK":
+                continue
+
+            date_str = data[0].decode()
+            match = re.search(r'INTERNALDATE "([^"]+)"', date_str)
+            if not match:
+                continue
+
+            email_date_str = match.group(1)
+            try:
+                # Parse email date từ IMAP (bao gồm timezone)
+                email_date = datetime.strptime(email_date_str, "%d-%b-%Y %H:%M:%S %z")
+                # Chuyển về local timezone (aware datetime)
+                email_date_local = email_date.astimezone()
+                
+                if email_date_local >= since_time:
+                    filtered_ids.append(mail_id)
+            except ValueError:
+                # Nếu parse lỗi, vẫn giữ email
+                filtered_ids.append(mail_id)
+
+        if limit is None:
+            return filtered_ids
+        return filtered_ids[-limit:]
+
     def fetch_email(self, mail_id):
-        """
-        Lấy thông tin email theo mail_id.
-        Trả về: subject(str), from_(str), body(str)
-        """
-        status, data = self.mail.fetch(mail_id, "(RFC822)")
+        """Lấy email chỉ theo HTML, không mark Seen tự động"""
+        status, data = self.mail.fetch(mail_id, '(BODY.PEEK[])')
         if status != "OK":
             print(f"Không lấy được email {mail_id.decode()}")
             return None, None, None
@@ -61,35 +90,98 @@ class EmailExtract:
         # Decode sender
         from_ = msg.get("From")
 
-        # Lấy nội dung body
+        # Lấy body HTML
         body = ""
         if msg.is_multipart():
             for part in msg.walk():
                 content_type = part.get_content_type()
-                content_disposition = str(part.get("Content-Disposition"))
-
-                if content_type == "text/plain" and "attachment" not in content_disposition:
-                    body = part.get_payload(decode=True).decode()
+                if content_type == "text/html" and "attachment" not in str(part.get("Content-Disposition")):
+                    html_body = part.get_payload(decode=True).decode(errors="ignore")
+                    body = re.sub('<[^<]+?>', '', html_body).strip()
                     break
         else:
-            body = msg.get_payload(decode=True).decode()
+            if msg.get_content_type() == "text/html":
+                html_body = msg.get_payload(decode=True).decode(errors="ignore")
+                body = re.sub('<[^<]+?>', '', html_body).strip()
 
         return subject, from_, body
-    
+
+    def check_email_format(self, subject, body):
+        """
+        Kiểm tra và trích xuất các trường bắt buộc từ email:
+        - Name (Tên khách hàng) - BẮT BUỘC
+        - Email (Email khách hàng) - BẮT BUỘC
+        - Date (Ngày dự kiến) - BẮT BUỘC
+        - Content/Inquiry (Nội dung yêu cầu) - BẮT BUỘC
+        
+        Returns:
+            dict: Dữ liệu trích xuất nếu hợp lệ (có đủ 4 trường), None nếu không hợp lệ
+        """
+        if not body.strip():
+            return None
+        
+        # Khởi tạo dict chứa dữ liệu trích xuất
+        extracted_data = {
+            'name': None,
+            'email': None,
+            'date': None,
+            'content': None
+        }
+        
+        # Trích xuất Name
+        name_match = re.search(r'Name:\s*([^\n\r]+)', body, re.IGNORECASE)
+        if name_match:
+            extracted_data['name'] = name_match.group(1).strip()
+        
+        # Trích xuất Email
+        email_match = re.search(r'Email:\s*([^\s\n\r]+@[^\s\n\r]+)', body, re.IGNORECASE)
+        if email_match:
+            extracted_data['email'] = email_match.group(1).strip()
+        
+        # Trích xuất Date (Approximate Move-In Date hoặc các biến thể)
+        date_patterns = [
+            r'(?:Approximate\s+)?Move-In\s+Date:\s*([^\n\r]+)',
+            r'Date:\s*(\d{1,2}/\d{1,2}/\d{4})',
+            r'Move\s+In:\s*([^\n\r]+)'
+        ]
+        for pattern in date_patterns:
+            date_match = re.search(pattern, body, re.IGNORECASE)
+            if date_match:
+                extracted_data['date'] = date_match.group(1).strip()
+                break
+        
+        # Trích xuất Content/Inquiry
+        inquiry_match = re.search(r'Inquiry:\s*([^\n\r]+)', body, re.IGNORECASE)
+        if inquiry_match:
+            extracted_data['content'] = inquiry_match.group(1).strip()
+        
+        # Kiểm tra xem có đủ TẤT CẢ các trường bắt buộc không
+        if all([extracted_data['name'], extracted_data['email'], 
+                extracted_data['date'], extracted_data['content']]):
+            return extracted_data
+        
+        return None
+
     def read_and_send_api(self):
-        mail_ids = self.list_email_ids()
+        mail_ids = self.list_email_ids(30)
+        print(mail_ids)
         for mail_id in mail_ids:
             subject, from_, body = self.fetch_email(mail_id)
             if subject is None:
                 continue
 
-            print(f"From: {from_}\nSubject: {subject}\nBody: {body[:100]}...\n")
-
-            if(subject.startswith('Cảnh báo')):
+            extracted_data = self.check_email_format(subject, body)
+            if extracted_data:
+                print("✅ Email hợp lệ - Dữ liệu trích xuất:")
+                print(f"  - Tên: {extracted_data['name']}")
+                print(f"  - Email: {extracted_data['email']}")
+                print(f"  - Ngày: {extracted_data['date']}")
+                print(f"  - Nội dung: {extracted_data['content']}")
                 print("Bắt đầu gửi API...")
             else:
-                self.mail.store(mail_id, '-FLAGS', '\\Seen')
-            
-    
+                # Email không hợp lệ hoặc thiếu trường bắt buộc → giữ unseen
+                print(f"❌ Email không hợp lệ hoặc thiếu thông tin bắt buộc: {subject}")
+
+            time.sleep(0.5)
     def logout(self):
         self.mail.logout()

@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     HOST_IMAP: str = 'imap.server'
     EMAIL_ADDRESS: str = 'abc@gmail.com'
     EMAIL_PASSWORD_APP: str = 'abc'
+    EMAIL_TIME_RANGE_MINUTES: int = 30  # Lấy email trong N phút gần nhất
     
     class Config:
         env_file = ".env"
