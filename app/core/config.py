@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     # API settings
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
+    DEBUG: bool = False
     
     # Scheduler settings
     SCHEDULER_TIMEZONE: str = "UTC"

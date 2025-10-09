@@ -135,7 +135,7 @@ html2 = """
 """
 
 # --- Gắn HTML vào email ---
-part = MIMEText(html, "html")
+part = MIMEText(html2, "html")
 message.attach(part)
 
 # --- Gửi mail ---

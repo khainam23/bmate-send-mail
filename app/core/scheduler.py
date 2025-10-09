@@ -30,15 +30,16 @@ scheduler = AsyncIOScheduler(
     jobstores=jobstores,
     executors=executors,
     job_defaults=job_defaults,
-    timezone=settings.scheduler_timezone
+    timezone=settings.SCHEDULER_TIMEZONE
 )
 
 def start_scheduler():
     """Start the scheduler"""
     try:
         # Import and add jobs
-        from app.jobs.print_job import add_print_jobs
+        from app.jobs.sync_email_job import add_sync_email_jobs
         # add_print_jobs(scheduler)  # Thêm print job mới
+        add_sync_email_jobs(scheduler)
         
         scheduler.start()
         logger.info("Scheduler started successfully")

@@ -26,6 +26,39 @@ class EmailExtract:
         self.mail.login(EMAIL_ACCOUNT, EMAIL_PASSWORD)
         print("Đã đăng nhập thành công!")
         self.mail.select(WHERE_READ_EMAIL)  # READ-WRITE mode để có thể set Seen
+        
+        # Queue để lưu các email đã xử lý
+        self.processed_emails = set()
+        self.queue_refresh_time = None
+        self._init_queue()
+
+    def _init_queue(self):
+        """Khởi tạo hoặc refresh queue"""
+        current_time = datetime.now().astimezone()
+        
+        # Nếu chưa có thời gian refresh hoặc đã quá thời gian
+        if self.queue_refresh_time is None or current_time >= self.queue_refresh_time:
+            self.processed_emails.clear()
+            # Đặt thời gian refresh tiếp theo = 3 * EMAIL_TIME_RANGE_MINUTES
+            time_range_minutes = settings.EMAIL_TIME_RANGE_MINUTES * 3
+            self.queue_refresh_time = current_time + timedelta(minutes=time_range_minutes)
+            print(f"🔄 Queue đã được refresh. Sẽ refresh lại vào: {self.queue_refresh_time.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    def _check_and_refresh_queue(self):
+        """Kiểm tra và refresh queue nếu cần"""
+        current_time = datetime.now().astimezone()
+        if current_time >= self.queue_refresh_time:
+            self._init_queue()
+
+    def _is_email_processed(self, mail_id):
+        """Kiểm tra email đã được xử lý chưa"""
+        email_id = mail_id.decode() if isinstance(mail_id, bytes) else mail_id
+        return email_id in self.processed_emails
+
+    def _mark_email_processed(self, mail_id):
+        """Đánh dấu email đã được xử lý"""
+        email_id = mail_id.decode() if isinstance(mail_id, bytes) else mail_id
+        self.processed_emails.add(email_id)
 
     def list_email_ids(self, limit=None):
         """Lấy danh sách email theo thời gian và giới hạn số lượng"""
@@ -163,9 +196,21 @@ class EmailExtract:
         return None
 
     def read_and_send_api(self):
+        # Kiểm tra và refresh queue nếu cần
+        self._check_and_refresh_queue()
+        
         mail_ids = self.list_email_ids(30)
-        print(mail_ids)
+        print(f"📧 Tìm thấy {len(mail_ids)} email(s)")
+        print(f"📊 Queue hiện tại: {len(self.processed_emails)} email đã xử lý")
+        
+        new_emails_count = 0
         for mail_id in mail_ids:
+            # Kiểm tra email đã được xử lý chưa
+            if self._is_email_processed(mail_id):
+                print(f"⏭️  Bỏ qua email ID {mail_id.decode()} (đã xử lý)")
+                continue
+            
+            new_emails_count += 1
             subject, from_, body = self.fetch_email(mail_id)
             if subject is None:
                 continue
@@ -178,10 +223,17 @@ class EmailExtract:
                 print(f"  - Ngày: {extracted_data['date']}")
                 print(f"  - Nội dung: {extracted_data['content']}")
                 print("Bắt đầu gửi API...")
+                
+                # Đánh dấu email đã xử lý
+                self._mark_email_processed(mail_id)
             else:
                 # Email không hợp lệ hoặc thiếu trường bắt buộc → giữ unseen
                 print(f"❌ Email không hợp lệ hoặc thiếu thông tin bắt buộc: {subject}")
+                # Vẫn đánh dấu đã xử lý để không kiểm tra lại
+                self._mark_email_processed(mail_id)
 
             time.sleep(0.5)
+        
+        print(f"✨ Hoàn thành! Đã xử lý {new_emails_count} email mới")
     def logout(self):
         self.mail.logout()
