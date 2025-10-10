@@ -1,5 +1,7 @@
 
 import smtplib
+import random
+import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from app.core.config import settings
@@ -8,12 +10,6 @@ from app.core.config import settings
 sender_email = settings.EMAIL_ADDRESS
 receiver_email = settings.EMAIL_ADDRESS
 password = settings.EMAIL_PASSWORD_APP  # dùng App Password nếu là Gmail
-
-# --- Tạo nội dung email ---
-message = MIMEMultipart("alternative")
-message["Subject"] = "New Inquiry Lead from Real Estate Japan"
-message["From"] = sender_email
-message["To"] = receiver_email
 
 # --- HTML Template ---
 html = """
@@ -134,15 +130,528 @@ html2 = """
 </html>
 """
 
-# --- Gắn HTML vào email ---
-part = MIMEText(html2, "html")
-message.attach(part)
+# --- Variation 3: Property Inquiry for Sale ---
+html3 = """
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { background-color: #1e1e1e; color: #ddd; font-family: Arial, sans-serif; padding: 20px; }
+    .container { background-color: #2c2c2c; padding: 20px; border-radius: 8px; width: 600px; margin: auto; }
+    h2 { color: #9bcb48; }
+    * {color: white;}
+    a { color: #52a8ff; text-decoration: none; }
+    .section { margin-bottom: 20px; }
+    .label { font-weight: bold; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2><img src="https://realestate.co.jp/favicon.ico" alt="logo" style="vertical-align:middle;margin-right:10px;">realestatejapan</h2>
+    <p>The following is an inquiry lead from Real Estate Japan. Please respond to the client as soon as possible.</p>
+    
+    <div class="section">
+      <p class="label">Property details:</p>
+      <p>Property link: <a href="https://realestate.co.jp/en/sale/view/2345678">https://realestate.co.jp/en/sale/view/2345678</a><br>
+         Property ID: 2345678<br>
+         Property Type: For Sale<br>
+         Building name: Tokyo Tower Mansion<br>
+         Unit number: 1505
+      </p>
+    </div>
 
-# --- Gửi mail ---
-try:
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(sender_email, password)
-        server.send_message(message)
-        print("✅ Email sent successfully!")
-except Exception as e:
-    print("❌ Error:", e)
+    <div class="section">
+      <p class="label">Customer details:</p>
+      <p>Name: Sarah Johnson<br>
+         Email: <a href="mailto:sarah.j@example.com">sarah.j@example.com</a><br>
+         Approximate Move-In Date: 12/01/2025<br>
+         Inquiry: I'm interested in purchasing this property. Could you provide more details about the financing options?
+      </p>
+    </div>
+
+    <p>View all inquiries in your <a href="https://realestate.co.jp">realestate.co.jp</a> account</p>
+    <p>Please click <a href="#">here</a></p>
+
+    <p>Kind regards,<br>
+    Real Estate Japan</p>
+  </div>
+</body>
+</html>
+"""
+
+# --- Variation 4: Urgent Expiration Notice (1 day) ---
+html4 = """
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: #ddd;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .container {
+      background-color: #2c2c2c;
+      padding: 20px;
+      border-radius: 8px;
+      width: 600px;
+      margin: auto;
+      border: 2px solid #ff6b6b;
+    }
+    * {
+      color: white;
+    }
+    h2 {
+      color: #ff6b6b;
+    }
+    a {
+      color: #52a8ff;
+      text-decoration: none;
+    }
+    p {
+      line-height: 1.6;
+    }
+    .urgent {
+      background-color: #ff6b6b;
+      padding: 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>
+      <img src="https://realestate.co.jp/favicon.ico" alt="logo"
+           style="vertical-align:middle;margin-right:10px;">
+      realestatejapan
+    </h2>
+
+    <div class="urgent">⚠️ URGENT: Listings Expire Tomorrow!</div>
+
+    <p>Your property listings will expire in <strong>ONE DAY</strong>. 
+    Please renew them immediately to keep them listed.</p>
+
+    <p>To renew the listings, click on the link below for the corresponding property type. 
+    You can then click on any property that you wish to extend the listing for, 
+    update any necessary data, and click "Save and Publish" to renew it.</p>
+
+    <p><strong>For Rent: 5 Items</strong><br>
+    <a href="https://realestate.co.jp/property/en/forrent?expires_on=2025-10-10&status=online">
+      https://realestate.co.jp/property/en/forrent?expires_on=2025-10-10&status=online
+    </a></p>
+
+    <p><strong>For Sale: 3 Items</strong><br>
+    <a href="https://realestate.co.jp/property/en/forsale?expires_on=2025-10-10&status=online">
+      https://realestate.co.jp/property/en/forsale?expires_on=2025-10-10&status=online
+    </a></p>
+
+    <p>Thank you for using our service and keeping your property information up to date.</p>
+
+    <p>Kind regards,<br>
+    Real Estate Japan</p>
+  </div>
+</body>
+</html>
+"""
+
+# --- Variation 5: Multiple Property Inquiries ---
+html5 = """
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { background-color: #1e1e1e; color: #ddd; font-family: Arial, sans-serif; padding: 20px; }
+    .container { background-color: #2c2c2c; padding: 20px; border-radius: 8px; width: 600px; margin: auto; }
+    h2 { color: #9bcb48; }
+    * {color: white;}
+    a { color: #52a8ff; text-decoration: none; }
+    .section { margin-bottom: 20px; }
+    .label { font-weight: bold; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2><img src="https://realestate.co.jp/favicon.ico" alt="logo" style="vertical-align:middle;margin-right:10px;">realestatejapan</h2>
+    <p>The following is an inquiry lead from Real Estate Japan. Please respond to the client as soon as possible.</p>
+    
+    <div class="section">
+      <p class="label">Property details:</p>
+      <p>Property link: <a href="https://realestate.co.jp/en/rent/view/3456789">https://realestate.co.jp/en/rent/view/3456789</a><br>
+         Property ID: 3456789<br>
+         Property Type: For Rent<br>
+         Building name: Shibuya Heights Apartment<br>
+         Unit number: 801
+      </p>
+    </div>
+
+    <div class="section">
+      <p class="label">Customer details:</p>
+      <p>Name: Michael Chen<br>
+         Email: <a href="mailto:m.chen@business.com">m.chen@business.com</a><br>
+         Phone: +81-90-1234-5678<br>
+         Approximate Move-In Date: 11/15/2025<br>
+         Inquiry: Hello, I'm relocating to Tokyo for work. I'm interested in this property and also looking at similar options in the Shibuya area. Do you have other available units?
+      </p>
+    </div>
+
+    <p>View all inquiries in your <a href="https://realestate.co.jp">realestate.co.jp</a> account</p>
+    <p>Please click <a href="#">here</a></p>
+
+    <p>Kind regards,<br>
+    Real Estate Japan</p>
+  </div>
+</body>
+</html>
+"""
+
+# --- Variation 6: Weekly Expiration Summary ---
+html6 = """
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: #ddd;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .container {
+      background-color: #2c2c2c;
+      padding: 20px;
+      border-radius: 8px;
+      width: 600px;
+      margin: auto;
+    }
+    * {
+      color: white;
+    }
+    h2 {
+      color: #9bcb48;
+    }
+    a {
+      color: #52a8ff;
+      text-decoration: none;
+    }
+    p {
+      line-height: 1.6;
+    }
+    .summary-box {
+      background-color: #3a3a3a;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>
+      <img src="https://realestate.co.jp/favicon.ico" alt="logo"
+           style="vertical-align:middle;margin-right:10px;">
+      realestatejapan
+    </h2>
+
+    <p>This is your weekly summary of property listings expiring in the next 7 days.</p>
+
+    <div class="summary-box">
+      <p><strong>Expiring in 1 day:</strong><br>
+      For Rent: 2 Items | For Sale: 1 Item</p>
+      
+      <p><strong>Expiring in 3 days:</strong><br>
+      For Rent: 8 Items | For Sale: 4 Items</p>
+      
+      <p><strong>Expiring in 7 days:</strong><br>
+      For Rent: 12 Items | For Sale: 6 Items</p>
+    </div>
+
+    <p>To renew your listings, please visit:</p>
+
+    <p><strong>For Rent Properties:</strong><br>
+    <a href="https://realestate.co.jp/property/en/forrent?status=online">
+      https://realestate.co.jp/property/en/forrent?status=online
+    </a></p>
+
+    <p><strong>For Sale Properties:</strong><br>
+    <a href="https://realestate.co.jp/property/en/forsale?status=online">
+      https://realestate.co.jp/property/en/forsale?status=online
+    </a></p>
+
+    <p>Thank you for using our service and keeping your property information up to date.</p>
+
+    <p>Kind regards,<br>
+    Real Estate Japan</p>
+  </div>
+</body>
+</html>
+"""
+
+# --- Variation 7: Property Inquiry with Viewing Request ---
+html7 = """
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { background-color: #1e1e1e; color: #ddd; font-family: Arial, sans-serif; padding: 20px; }
+    .container { background-color: #2c2c2c; padding: 20px; border-radius: 8px; width: 600px; margin: auto; }
+    h2 { color: #9bcb48; }
+    * {color: white;}
+    a { color: #52a8ff; text-decoration: none; }
+    .section { margin-bottom: 20px; }
+    .label { font-weight: bold; color: #fff; }
+    .highlight { background-color: #4a4a4a; padding: 10px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2><img src="https://realestate.co.jp/favicon.ico" alt="logo" style="vertical-align:middle;margin-right:10px;">realestatejapan</h2>
+    <p>The following is an inquiry lead from Real Estate Japan. Please respond to the client as soon as possible.</p>
+    
+    <div class="section">
+      <p class="label">Property details:</p>
+      <p>Property link: <a href="https://realestate.co.jp/en/rent/view/4567890">https://realestate.co.jp/en/rent/view/4567890</a><br>
+         Property ID: 4567890<br>
+         Property Type: For Rent<br>
+         Building name: Roppongi Hills Residence<br>
+         Unit number: 2103
+      </p>
+    </div>
+
+    <div class="section">
+      <p class="label">Customer details:</p>
+      <p>Name: Emma Williams<br>
+         Email: <a href="mailto:emma.w@international.com">emma.w@international.com</a><br>
+         Phone: +81-80-9876-5432<br>
+         Approximate Move-In Date: 01/05/2026<br>
+         Inquiry: I would like to schedule a viewing for this property. I'm available on weekdays after 5 PM or anytime on weekends. Please let me know your available times.
+      </p>
+    </div>
+
+    <div class="highlight">
+      <p class="label">⏰ Viewing Request - Please respond within 24 hours</p>
+    </div>
+
+    <p>View all inquiries in your <a href="https://realestate.co.jp">realestate.co.jp</a> account</p>
+    <p>Please click <a href="#">here</a></p>
+
+    <p>Kind regards,<br>
+    Real Estate Japan</p>
+  </div>
+</body>
+</html>
+"""
+
+# --- Variation 8: No Expiring Properties (Confirmation) ---
+html8 = """
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: #ddd;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .container {
+      background-color: #2c2c2c;
+      padding: 20px;
+      border-radius: 8px;
+      width: 600px;
+      margin: auto;
+      border: 2px solid #9bcb48;
+    }
+    * {
+      color: white;
+    }
+    h2 {
+      color: #9bcb48;
+    }
+    a {
+      color: #52a8ff;
+      text-decoration: none;
+    }
+    p {
+      line-height: 1.6;
+    }
+    .success {
+      background-color: #9bcb48;
+      padding: 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      text-align: center;
+      color: #1e1e1e;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>
+      <img src="https://realestate.co.jp/favicon.ico" alt="logo"
+           style="vertical-align:middle;margin-right:10px;">
+      realestatejapan
+    </h2>
+
+    <div class="success">✅ All Your Listings Are Up to Date!</div>
+
+    <p>Good news! You currently have no property listings expiring in the next 7 days.</p>
+
+    <p>All your properties are active and will remain listed. We'll notify you when any listings are approaching their expiration date.</p>
+
+    <p><strong>Current Active Listings:</strong><br>
+    For Rent: 25 Items<br>
+    For Sale: 15 Items</p>
+
+    <p>To view or manage your listings, please visit:</p>
+
+    <p><a href="https://realestate.co.jp/property/en/forrent?status=online">
+      View For Rent Properties
+    </a></p>
+
+    <p><a href="https://realestate.co.jp/property/en/forsale?status=online">
+      View For Sale Properties
+    </a></p>
+
+    <p>Thank you for using our service and keeping your property information up to date.</p>
+
+    <p>Kind regards,<br>
+    Real Estate Japan</p>
+  </div>
+</body>
+</html>
+"""
+
+# --- Danh sách các template và subject tương ứng ---
+email_templates = [
+    {
+        "subject": "New Inquiry Lead from Real Estate Japan",
+        "html": html
+    },
+    {
+        "subject": "Property Listings Expiring Soon - Action Required",
+        "html": html2
+    },
+    {
+        "subject": "New Inquiry Lead from Real Estate Japan",
+        "html": html3
+    },
+    {
+        "subject": "⚠️ URGENT: Property Listings Expire Tomorrow!",
+        "html": html4
+    },
+    {
+        "subject": "New Inquiry Lead from Real Estate Japan",
+        "html": html5
+    },
+    {
+        "subject": "Weekly Property Expiration Summary",
+        "html": html6
+    },
+    {
+        "subject": "New Inquiry Lead - Viewing Request",
+        "html": html7
+    },
+    {
+        "subject": "✅ All Your Property Listings Are Up to Date",
+        "html": html8
+    }
+]
+
+
+def send_random_emails(count=1, delay=2):
+    """
+    Gửi email ngẫu nhiên từ danh sách templates
+    
+    Args:
+        count (int): Số lượng email muốn gửi
+        delay (int): Thời gian chờ giữa các email (giây)
+    """
+    print(f"🚀 Bắt đầu gửi {count} email ngẫu nhiên...")
+    print(f"⏱️  Delay giữa các email: {delay} giây\n")
+    
+    success_count = 0
+    fail_count = 0
+    
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender_email, password)
+            print("✅ Đăng nhập SMTP thành công!\n")
+            
+            for i in range(count):
+                # Chọn ngẫu nhiên một template
+                template = random.choice(email_templates)
+                
+                # Tạo message mới cho mỗi email
+                message = MIMEMultipart("alternative")
+                message["Subject"] = template["subject"]
+                message["From"] = sender_email
+                message["To"] = receiver_email
+                
+                # Gắn HTML vào email
+                part = MIMEText(template["html"], "html")
+                message.attach(part)
+                
+                try:
+                    # Gửi email
+                    server.send_message(message)
+                    success_count += 1
+                    print(f"✅ Email {i+1}/{count} đã gửi thành công!")
+                    print(f"   📧 Subject: {template['subject']}")
+                    
+                    # Delay giữa các email (trừ email cuối cùng)
+                    if i < count - 1:
+                        print(f"   ⏳ Chờ {delay} giây...\n")
+                        time.sleep(delay)
+                    else:
+                        print()
+                        
+                except Exception as e:
+                    fail_count += 1
+                    print(f"❌ Email {i+1}/{count} gửi thất bại!")
+                    print(f"   Error: {e}\n")
+                    
+    except Exception as e:
+        print(f"❌ Lỗi kết nối SMTP: {e}")
+        return
+    
+    # Tổng kết
+    print("=" * 50)
+    print(f"📊 KẾT QUẢ:")
+    print(f"   ✅ Thành công: {success_count}/{count}")
+    print(f"   ❌ Thất bại: {fail_count}/{count}")
+    print("=" * 50)
+
+
+# --- Chạy chương trình ---
+if __name__ == "__main__":
+    # Nhập số lượng email muốn gửi
+    try:
+        num_emails = int(input("Nhập số lượng email muốn gửi (mặc định 1): ") or "1")
+        if num_emails < 1:
+            print("⚠️  Số lượng phải >= 1. Sử dụng mặc định: 1")
+            num_emails = 1
+    except ValueError:
+        print("⚠️  Giá trị không hợp lệ. Sử dụng mặc định: 1")
+        num_emails = 1
+    
+    # Nhập delay giữa các email
+    try:
+        delay_seconds = int(input("Nhập thời gian chờ giữa các email (giây, mặc định 2): ") or "2")
+        if delay_seconds < 0:
+            print("⚠️  Delay phải >= 0. Sử dụng mặc định: 2")
+            delay_seconds = 2
+    except ValueError:
+        print("⚠️  Giá trị không hợp lệ. Sử dụng mặc định: 2")
+        delay_seconds = 2
+    
+    print()
+    send_random_emails(count=num_emails, delay=delay_seconds)
