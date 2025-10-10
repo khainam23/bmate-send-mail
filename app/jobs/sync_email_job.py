@@ -4,7 +4,7 @@ Email synchronization job for reading and processing emails
 import logging
 from datetime import datetime
 
-from app.jobs.read_sync_mail.index import EmailExtract
+from app.jobs.read_sync_mail.index import email_extarct as email_extractor
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ async def sync_email_job():
         logger.info(f"Starting email sync job at {current_time}")
         
         # Initialize email extractor and process emails
-        email_extractor = EmailExtract()
+        email_extractor.login()
         email_extractor.read_and_send_api()
         email_extractor.logout()
         

@@ -44,10 +44,11 @@ html = """
 
     <div class="section">
       <p class="label">Customer details:</p>
-      <p>Name: Kyle Chew<br>
-         Email: <a href="mailto:khye.chew@gmail.com">khye.chew@gmail.com</a><br>
-         Approximate Move-In Date: 10/23/2025<br>
-         Inquiry: Hello, I'm wondering if this still available
+      <p>Name: Dev test<br>
+         Email: <a href="mailto:emma.w@international.com">dev.test@bmate.com</a><br>
+         Phone: +81-80-9xxx-xxx<br>
+         Approximate Move-In Date: 01/05/2026<br>
+         Inquiry: This is test
       </p>
     </div>
 
@@ -163,10 +164,11 @@ html3 = """
 
     <div class="section">
       <p class="label">Customer details:</p>
-      <p>Name: Sarah Johnson<br>
-         Email: <a href="mailto:sarah.j@example.com">sarah.j@example.com</a><br>
-         Approximate Move-In Date: 12/01/2025<br>
-         Inquiry: I'm interested in purchasing this property. Could you provide more details about the financing options?
+      <p>Name: Dev test<br>
+         Email: <a href="mailto:emma.w@international.com">dev.test@bmate.com</a><br>
+         Phone: +81-80-9xxx-xxx<br>
+         Approximate Move-In Date: 01/05/2026<br>
+         Inquiry: This is test
       </p>
     </div>
 
@@ -292,11 +294,11 @@ html5 = """
 
     <div class="section">
       <p class="label">Customer details:</p>
-      <p>Name: Michael Chen<br>
-         Email: <a href="mailto:m.chen@business.com">m.chen@business.com</a><br>
-         Phone: +81-90-1234-5678<br>
-         Approximate Move-In Date: 11/15/2025<br>
-         Inquiry: Hello, I'm relocating to Tokyo for work. I'm interested in this property and also looking at similar options in the Shibuya area. Do you have other available units?
+      <p>Name: Dev test<br>
+         Email: <a href="mailto:emma.w@international.com">dev.test@bmate.com</a><br>
+         Phone: +81-80-9xxx-xxx<br>
+         Approximate Move-In Date: 01/05/2026<br>
+         Inquiry: This is test
       </p>
     </div>
 
@@ -427,11 +429,11 @@ html7 = """
 
     <div class="section">
       <p class="label">Customer details:</p>
-      <p>Name: Emma Williams<br>
-         Email: <a href="mailto:emma.w@international.com">emma.w@international.com</a><br>
-         Phone: +81-80-9876-5432<br>
+      <p>Name: Dev test<br>
+         Email: <a href="mailto:emma.w@international.com">dev.test@bmate.com</a><br>
+         Phone: +81-80-9xxx-xxx<br>
          Approximate Move-In Date: 01/05/2026<br>
-         Inquiry: I would like to schedule a viewing for this property. I'm available on weekdays after 5 PM or anytime on weekends. Please let me know your available times.
+         Inquiry: This is test
       </p>
     </div>
 
@@ -655,3 +657,5 @@ if __name__ == "__main__":
     
     print()
     send_random_emails(count=num_emails, delay=delay_seconds)
+    
+# python -m app.tests.read_sync_mail.send_mail
