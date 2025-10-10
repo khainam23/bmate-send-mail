@@ -2,6 +2,7 @@
 import smtplib
 import random
 import time
+import uuid
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from app.core.config import settings
@@ -11,20 +12,27 @@ sender_email = settings.EMAIL_ADDRESS
 receiver_email = settings.EMAIL_ADDRESS
 password = settings.EMAIL_PASSWORD_APP  # dùng App Password nếu là Gmail
 
-# --- HTML Template ---
-html = """
-<!DOCTYPE html>
+
+def generate_random_phone():
+    """Tạo số điện thoại ngẫu nhiên theo format 8180XXXXXXXX"""
+    return f"8180{random.randint(1000, 9999)}{random.randint(1000, 9999)}"
+
+
+def generate_inquiry_email(name, phone, property_id, property_type, building_name, unit_number, property_url):
+    """Tạo HTML template cho email inquiry"""
+    random = str(uuid.uuid4())[:8]
+    return f"""<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <style>
-    body { background-color: #1e1e1e; color: #ddd; font-family: Arial, sans-serif; padding: 20px; }
-    .container { background-color: #2c2c2c; padding: 20px; border-radius: 8px; width: 600px; margin: auto; }
-    h2 { color: #9bcb48; }
-    * {color: white;}
-    a { color: #52a8ff; text-decoration: none; }
-    .section { margin-bottom: 20px; }
-    .label { font-weight: bold; color: #fff; }
+    body {{ background-color: #1e1e1e; color: #ddd; font-family: Arial, sans-serif; padding: 20px; }}
+    .container {{ background-color: #2c2c2c; padding: 20px; border-radius: 8px; width: 600px; margin: auto; }}
+    h2 {{ color: #9bcb48; }}
+    * {{color: white;}}
+    a {{ color: #52a8ff; text-decoration: none; }}
+    .section {{ margin-bottom: 20px; }}
+    .label {{ font-weight: bold; color: #fff; }}
   </style>
 </head>
 <body>
@@ -34,19 +42,19 @@ html = """
     
     <div class="section">
       <p class="label">Property details:</p>
-      <p>Property link: <a href="https://realestate.co.jp/en/rent/view/1280512">https://realestate.co.jp/en/rent/view/1280512</a><br>
-         Property ID: 1280512<br>
-         Property Type: For Rent<br>
-         Building name: Ka F+style Hagoromo Building No. 5<br>
-         Unit number: 202
+      <p>Property link: <a href="{property_url}">{property_url}</a><br>
+         Property ID: {property_id}<br>
+         Property Type: {property_type}<br>
+         Building name: {building_name}<br>
+         Unit number: {unit_number}
       </p>
     </div>
 
     <div class="section">
       <p class="label">Customer details:</p>
-      <p>Name: Dev test<br>
-         Email: <a href="mailto:emma.w@international.com">dev.test@bmate.com</a><br>
-         Phone: +81-80-9xxx-xxx<br>
+      <p>Name: {name}<br>
+         Email: <a href="mailto:dev.test@bmate.com">'dev{random}.test@bmate.com'</a><br>
+         Phone: {generate_random_phone()}<br>
          Approximate Move-In Date: 01/05/2026<br>
          Inquiry: This is test
       </p>
@@ -63,6 +71,7 @@ html = """
 """
 
 
+# --- Static HTML Templates (không cần UUID/phone ngẫu nhiên) ---
 html2 = """
 <!DOCTYPE html>
 <html>
@@ -131,58 +140,6 @@ html2 = """
 </html>
 """
 
-# --- Variation 3: Property Inquiry for Sale ---
-html3 = """
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { background-color: #1e1e1e; color: #ddd; font-family: Arial, sans-serif; padding: 20px; }
-    .container { background-color: #2c2c2c; padding: 20px; border-radius: 8px; width: 600px; margin: auto; }
-    h2 { color: #9bcb48; }
-    * {color: white;}
-    a { color: #52a8ff; text-decoration: none; }
-    .section { margin-bottom: 20px; }
-    .label { font-weight: bold; color: #fff; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2><img src="https://realestate.co.jp/favicon.ico" alt="logo" style="vertical-align:middle;margin-right:10px;">realestatejapan</h2>
-    <p>The following is an inquiry lead from Real Estate Japan. Please respond to the client as soon as possible.</p>
-    
-    <div class="section">
-      <p class="label">Property details:</p>
-      <p>Property link: <a href="https://realestate.co.jp/en/sale/view/2345678">https://realestate.co.jp/en/sale/view/2345678</a><br>
-         Property ID: 2345678<br>
-         Property Type: For Sale<br>
-         Building name: Tokyo Tower Mansion<br>
-         Unit number: 1505
-      </p>
-    </div>
-
-    <div class="section">
-      <p class="label">Customer details:</p>
-      <p>Name: Dev test<br>
-         Email: <a href="mailto:emma.w@international.com">dev.test@bmate.com</a><br>
-         Phone: +81-80-9xxx-xxx<br>
-         Approximate Move-In Date: 01/05/2026<br>
-         Inquiry: This is test
-      </p>
-    </div>
-
-    <p>View all inquiries in your <a href="https://realestate.co.jp">realestate.co.jp</a> account</p>
-    <p>Please click <a href="#">here</a></p>
-
-    <p>Kind regards,<br>
-    Real Estate Japan</p>
-  </div>
-</body>
-</html>
-"""
-
-# --- Variation 4: Urgent Expiration Notice (1 day) ---
 html4 = """
 <!DOCTYPE html>
 <html>
@@ -261,58 +218,6 @@ html4 = """
 </html>
 """
 
-# --- Variation 5: Multiple Property Inquiries ---
-html5 = """
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { background-color: #1e1e1e; color: #ddd; font-family: Arial, sans-serif; padding: 20px; }
-    .container { background-color: #2c2c2c; padding: 20px; border-radius: 8px; width: 600px; margin: auto; }
-    h2 { color: #9bcb48; }
-    * {color: white;}
-    a { color: #52a8ff; text-decoration: none; }
-    .section { margin-bottom: 20px; }
-    .label { font-weight: bold; color: #fff; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2><img src="https://realestate.co.jp/favicon.ico" alt="logo" style="vertical-align:middle;margin-right:10px;">realestatejapan</h2>
-    <p>The following is an inquiry lead from Real Estate Japan. Please respond to the client as soon as possible.</p>
-    
-    <div class="section">
-      <p class="label">Property details:</p>
-      <p>Property link: <a href="https://realestate.co.jp/en/rent/view/3456789">https://realestate.co.jp/en/rent/view/3456789</a><br>
-         Property ID: 3456789<br>
-         Property Type: For Rent<br>
-         Building name: Shibuya Heights Apartment<br>
-         Unit number: 801
-      </p>
-    </div>
-
-    <div class="section">
-      <p class="label">Customer details:</p>
-      <p>Name: Dev test<br>
-         Email: <a href="mailto:emma.w@international.com">dev.test@bmate.com</a><br>
-         Phone: +81-80-9xxx-xxx<br>
-         Approximate Move-In Date: 01/05/2026<br>
-         Inquiry: This is test
-      </p>
-    </div>
-
-    <p>View all inquiries in your <a href="https://realestate.co.jp">realestate.co.jp</a> account</p>
-    <p>Please click <a href="#">here</a></p>
-
-    <p>Kind regards,<br>
-    Real Estate Japan</p>
-  </div>
-</body>
-</html>
-"""
-
-# --- Variation 6: Weekly Expiration Summary ---
 html6 = """
 <!DOCTYPE html>
 <html>
@@ -395,63 +300,6 @@ html6 = """
 </html>
 """
 
-# --- Variation 7: Property Inquiry with Viewing Request ---
-html7 = """
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { background-color: #1e1e1e; color: #ddd; font-family: Arial, sans-serif; padding: 20px; }
-    .container { background-color: #2c2c2c; padding: 20px; border-radius: 8px; width: 600px; margin: auto; }
-    h2 { color: #9bcb48; }
-    * {color: white;}
-    a { color: #52a8ff; text-decoration: none; }
-    .section { margin-bottom: 20px; }
-    .label { font-weight: bold; color: #fff; }
-    .highlight { background-color: #4a4a4a; padding: 10px; border-radius: 5px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2><img src="https://realestate.co.jp/favicon.ico" alt="logo" style="vertical-align:middle;margin-right:10px;">realestatejapan</h2>
-    <p>The following is an inquiry lead from Real Estate Japan. Please respond to the client as soon as possible.</p>
-    
-    <div class="section">
-      <p class="label">Property details:</p>
-      <p>Property link: <a href="https://realestate.co.jp/en/rent/view/4567890">https://realestate.co.jp/en/rent/view/4567890</a><br>
-         Property ID: 4567890<br>
-         Property Type: For Rent<br>
-         Building name: Roppongi Hills Residence<br>
-         Unit number: 2103
-      </p>
-    </div>
-
-    <div class="section">
-      <p class="label">Customer details:</p>
-      <p>Name: Dev test<br>
-         Email: <a href="mailto:emma.w@international.com">dev.test@bmate.com</a><br>
-         Phone: +81-80-9xxx-xxx<br>
-         Approximate Move-In Date: 01/05/2026<br>
-         Inquiry: This is test
-      </p>
-    </div>
-
-    <div class="highlight">
-      <p class="label">⏰ Viewing Request - Please respond within 24 hours</p>
-    </div>
-
-    <p>View all inquiries in your <a href="https://realestate.co.jp">realestate.co.jp</a> account</p>
-    <p>Please click <a href="#">here</a></p>
-
-    <p>Kind regards,<br>
-    Real Estate Japan</p>
-  </div>
-</body>
-</html>
-"""
-
-# --- Variation 8: No Expiring Properties (Confirmation) ---
 html8 = """
 <!DOCTYPE html>
 <html>
@@ -533,40 +381,79 @@ html8 = """
 """
 
 # --- Danh sách các template và subject tương ứng ---
-email_templates = [
+# Tạo danh sách email templates động với UUID và số điện thoại ngẫu nhiên
+email_templates = []
+
+# Thêm các template inquiry với thông tin ngẫu nhiên
+inquiry_properties = [
     {
-        "subject": "New Inquiry Lead from Real Estate Japan",
-        "html": html
+        "property_id": "1280512",
+        "property_type": "For Rent",
+        "building_name": "Ka F+style Hagoromo Building No. 5",
+        "unit_number": "202",
+        "property_url": "https://realestate.co.jp/en/rent/view/1280512"
     },
+    {
+        "property_id": "2345678",
+        "property_type": "For Sale",
+        "building_name": "Tokyo Tower Mansion",
+        "unit_number": "1505",
+        "property_url": "https://realestate.co.jp/en/sale/view/2345678"
+    },
+    {
+        "property_id": "3456789",
+        "property_type": "For Rent",
+        "building_name": "Shibuya Heights Apartment",
+        "unit_number": "801",
+        "property_url": "https://realestate.co.jp/en/rent/view/3456789"
+    },
+    {
+        "property_id": "4567890",
+        "property_type": "For Rent",
+        "building_name": "Roppongi Hills Residence",
+        "unit_number": "2103",
+        "property_url": "https://realestate.co.jp/en/rent/view/4567890"
+    }
+]
+
+# Tạo inquiry emails với UUID và số điện thoại ngẫu nhiên
+for prop in inquiry_properties:
+    unique_id = str(uuid.uuid4())[:8]
+    name = f"Dev Test - {unique_id}"
+    phone = generate_random_phone()
+    
+    email_templates.append({
+        "subject": "New Inquiry Lead from Real Estate Japan",
+        "html": generate_inquiry_email(
+            name=name,
+            phone=phone,
+            property_id=prop["property_id"],
+            property_type=prop["property_type"],
+            building_name=prop["building_name"],
+            unit_number=prop["unit_number"],
+            property_url=prop["property_url"]
+        )
+    })
+
+# Thêm các template khác (expiration notices, summaries)
+email_templates.extend([
     {
         "subject": "Property Listings Expiring Soon - Action Required",
         "html": html2
-    },
-    {
-        "subject": "New Inquiry Lead from Real Estate Japan",
-        "html": html3
     },
     {
         "subject": "⚠️ URGENT: Property Listings Expire Tomorrow!",
         "html": html4
     },
     {
-        "subject": "New Inquiry Lead from Real Estate Japan",
-        "html": html5
-    },
-    {
         "subject": "Weekly Property Expiration Summary",
         "html": html6
-    },
-    {
-        "subject": "New Inquiry Lead - Viewing Request",
-        "html": html7
     },
     {
         "subject": "✅ All Your Property Listings Are Up to Date",
         "html": html8
     }
-]
+])
 
 
 def send_random_emails(count=1, delay=2):

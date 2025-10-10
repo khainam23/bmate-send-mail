@@ -1,0 +1,34 @@
+{
+    "user_id": 0,
+    "recipient": null,
+    "token_api": "",
+    "opportunity_status": null,
+    "opp_type_source": "https://bmate.getflycrm.com",
+    "opp_source_content": "http://127.0.0.1",
+    "account_type": [],
+    "key": "QQtBtzyGuvbDiFLE0Z1w4IO8cCkc1c0V5XWyn8iNh7YeUk8HO6",
+    "opp_url_source": "http://127.0.0.1:5500/index.html",
+    "account_name": "dev test - send normal",
+    "account_description": "",
+    "account_email": "",
+    "account_phone": "45776",
+    "custom_fields": {
+        "ngay_khach_contact": "03/10/2025",
+        "visa": "",
+        "ngay_du_kien_vao_nha": "",
+        "ngan_sach_tien_thue": "",
+        "overseas_dang_o_nhat": "",
+        "nuoi_pet": "",
+        "nen_tang_lien_he": ""
+    },
+    "utm_params": {
+        "utm_source": "",
+        "utm_campaign": "",
+        "utm_medium": "",
+        "utm_content": "",
+        "utm_term": "",
+        "utm_user": "",
+        "utm_account": "",
+        "sources": "http://127.0.0.1:5500/index.html"
+    }
+}
