@@ -17,7 +17,7 @@ async def sync_email_job():
         
         # Initialize email extractor and process emails
         email_extractor.login()
-        email_extractor.read_and_send_api()
+        email_extractor.read_and_store()
         email_extractor.logout()
         
         message = f"Email sync job completed successfully at {current_time}"
@@ -31,7 +31,6 @@ async def sync_email_job():
 
 def add_sync_email_jobs(scheduler):
     """Add email sync jobs to scheduler"""
-    # Run email sync job every 5 minutes
     scheduler.add_job(
         sync_email_job,
         'interval',

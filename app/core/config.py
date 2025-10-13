@@ -24,7 +24,9 @@ class Settings(BaseSettings):
     EMAIL_ADDRESS: str = 'abc@gmail.com'
     EMAIL_PASSWORD_APP: str = 'abc'
     EMAIL_TIME_RANGE_MINUTES: int = 30  # Lấy email trong N phút gần nhất
-    ALLOWED_SENDERS: str = 'abc@gmail.com'  # Danh sách email được phép, cách nhau bởi dấu phẩy (để trống = cho phép tất cả)
+    EMAIL_TIME_SEND: int = 5 # Thời gian gửi mail mỗi job
+    ALLOWED_SENDERS: str = 'khainam23@gmail.com'  # Danh sách email được phép, cách nhau bởi dấu phẩy (để trống = cho phép tất cả)
+    NAME_COLLECTION_MODEL_SEND_MAIL: str = 'model_mail'
     
     # CRM
     URL_CALL_CRM_BMATE: str = "url get"

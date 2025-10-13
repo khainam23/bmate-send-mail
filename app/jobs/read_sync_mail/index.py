@@ -1,15 +1,11 @@
-import imaplib
-import email
+import imaplib, time, json, re, requests
 from email.header import decode_header
 from typing import Final
-import time
-import json
-import re
+from email import message_from_bytes
 from datetime import datetime, timedelta
-from datetime import datetime, timedelta, timezone
-import requests
 
 from app.core.config import settings
+from app.db.mongodb import mongodb
 
 # ==============================
 # Cấu hình
@@ -188,7 +184,7 @@ class EmailExtract:
             return None, None, None, None, None
 
         raw_email = data[0][1]
-        msg = email.message_from_bytes(raw_email)
+        msg = message_from_bytes(raw_email)
 
         # Decode subject
         subject, encoding = decode_header(msg["Subject"])[0]
@@ -207,7 +203,7 @@ class EmailExtract:
                 from email.utils import parsedate_to_datetime
                 email_datetime = parsedate_to_datetime(date_header)
                 # Chuyển về local timezone và format theo định dạng mong muốn
-                email_date = email_datetime.astimezone().strftime("%d-%m-%Y")
+                email_date = email_datetime.astimezone().strftime("%d/%m/%Y")
             except Exception as e:
                 print(f"⚠️  Không thể parse email date: {e}")
                 email_date = None
@@ -253,9 +249,14 @@ class EmailExtract:
             extracted_data['name'] = name_match.group(1).strip()
         
         # Trích xuất Email
-        email_match = re.search(r'Email:\s*([^\s\n\r]+@[^\s\n\r]+)', body, re.IGNORECASE)
+        email_match = re.search(
+            r'Email:\s*["\'<\(\[]*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})[>"\'\)\],\s]*',
+            body,
+            re.IGNORECASE
+        )
+
         if email_match:
-            extracted_data['email'] = email_match.group(1).strip()
+            extracted_data['email'] = email_match.group(1).strip().lower()
         
         # Trích xuất Phone
         phone_patterns = [
@@ -369,7 +370,7 @@ class EmailExtract:
         extracted_data['_missing_fields'] = [field for field, value in required_fields.items() if not value]
         return None
 
-    def read_and_send_api(self):
+    def read_and_store(self):
         # Kiểm tra và refresh queue nếu cần
         self._check_and_refresh_queue()
         
@@ -378,6 +379,7 @@ class EmailExtract:
         print(f"📊 Queue hiện tại: {len(self.processed_emails)} email đã xử lý")
         
         new_emails_count = 0
+        store_data = []
         for mail_id in mail_ids:
             # Kiểm tra email đã được xử lý chưa (chỉ theo mail_id)
             if self._is_email_processed(mail_id):
@@ -425,8 +427,13 @@ class EmailExtract:
                 if extracted_data.get('contact_date'):
                     print(f"  - Ngày contact: {extracted_data['contact_date']}")
                 
-                print("Bắt đầu gửi API...")
-                self.call_api(extracted_data)
+                print("Đã ghi nhận lại...")
+                store_data.append({
+                    "email_id": mail_id.decode(),
+                    "data": extracted_data,
+                    "can_send": True,
+                    "created_at": datetime.now()
+                })
                 time.sleep(0.5)
                 
                 # Đánh dấu email và thread đã xử lý
@@ -451,25 +458,38 @@ class EmailExtract:
                     print(f"      - Phone: {extracted_data.get('phone') or '❌ THIẾU'}")
                     print(f"      - Contact Date: {extracted_data.get('contact_date') or '❌ THIẾU'}")
                     print(f"      - Content: {extracted_data.get('content') or '❌ THIẾU'}")
-                    
-                    # Hiển thị body để debug
-                    if settings.DEBUG:
-                        # Chế độ DEBUG: hiển thị toàn bộ body
-                        print(f"   📄 Full Body (DEBUG mode):")
-                        print(f"      {body}")
-                    else:
-                        # Chế độ thường: chỉ hiển thị 300 ký tự đầu
-                        preview_length = min(300, len(body))
-                        print(f"   📄 Body preview ({preview_length} ký tự đầu):")
-                        print(f"      {body[:preview_length]}{'...' if len(body) > preview_length else ''}")
                 
                 # Vẫn đánh dấu đã xử lý để không kiểm tra lại
                 self._mark_email_processed(mail_id)
         
-        print(f"✨ Hoàn thành! Đã xử lý {new_emails_count} email mới")
+        print(f"✨ Hoàn thành! Đã tìm thấy {new_emails_count} email mới")
+        print("Bắt đầu lưu vào db...")
+        self.save_db(store_data)
         
-    def call_api(self, extracted_data):
+    def save_db(self, store_data):
+        collection = mongodb.get_collection(settings.NAME_COLLECTION_MODEL_SEND_MAIL)
+      
+        if not store_data or len(store_data) == 0:
+            return  # tránh insert rỗng
+        
+        collection.insert_many(store_data, ordered=False) # import song song có lỗi vẫn làm tiếp
+        print(f"💾 Đã lưu {len(store_data)} email vào DB")
+        
+    def call_api(self):
         try:
+            collection = mongodb.get_collection(settings.NAME_COLLECTION_MODEL_SEND_MAIL)
+            extracted_data = collection.find_one(
+                {"can_send": True},
+                sort=[("created_at", -1)]
+            )
+            
+            if not extracted_data or not extracted_data.get("data"):
+                print("Không có dữ liệu để gửi API")
+                return
+            
+            _id = extracted_data['_id']
+            extracted_data = extracted_data["data"]
+            
             url = settings.URL_CALL_CRM_BMATE
             
             json_data = {
@@ -487,13 +507,13 @@ class EmailExtract:
                 "account_email": extracted_data.get('email', ""),
                 "account_phone": extracted_data.get('phone', ""),
                 "custom_fields": {
-                    "ngay_khach_contact": extracted_data.get('contact_date', ""),
-                    "visa": extracted_data.get('visa', ""),
-                    "ngay_du_kien_vao_nha": extracted_data.get('date', ""),
-                    "ngan_sach_tien_thue": extracted_data.get('budget', ""),
-                    "overseas_dang_o_nhat": extracted_data.get('overseas', ""),
-                    "nuoi_pet": extracted_data.get('pet', ""),
-                    "nen_tang_lien_he": extracted_data.get('contact_platform', "")
+                    "ngay_khach_contact": extracted_data.get('contact_date') or "",
+                    "visa": extracted_data.get('visa') or "",
+                    "ngay_du_kien_vao_nha": extracted_data.get('date') or "",
+                    "ngan_sach_tien_thue": extracted_data.get('budget') or "",
+                    "overseas_dang_o_nhat": extracted_data.get('overseas') or "",
+                    "nuoi_pet": extracted_data.get('pet') or "",
+                    "nen_tang_lien_he": extracted_data.get('contact_platform') or ""
                 },
                 "utm_params": {
                     "utm_source": "",
@@ -507,6 +527,17 @@ class EmailExtract:
                 }
             }
             
+            def none_to_empty(value):
+                if isinstance(value, dict):
+                    return {k: none_to_empty(v) for k, v in value.items()}
+                elif isinstance(value, list):
+                    return [none_to_empty(v) for v in value]
+                elif value is None:
+                    return ""
+                return value
+            
+            json_data = none_to_empty(json_data)
+            
             data_form = {
                 "data_form": json.dumps(json_data),
                 "verify_with_google_recaptcha": False
@@ -516,15 +547,21 @@ class EmailExtract:
             
             if response.status_code == 200:
                 print(f"✅ Gửi API thành công! Response: {response.text[:200]}")
+                # Xóa bản ghi
+                collection.delete_one({"_id": _id})
                 return True
             else:
                 print(f"⚠️ API trả về status: {response.status_code}, Response: {response.text[:200]}")
+                # Đánh trường can_send là False và thêm trường error nhận được cho nó
+                collection.update_one(
+                    {"_id": _id},
+                    {"$set": {"can_send": False, "error": response.text[:500]}}
+                )
                 return False
-                
+
         except Exception as e:
-            print(f"❌ Lỗi khi gọi API: {str(e)}")
+            print(f"❌ Lỗi: {str(e)}")
             return False
-    
     
     def logout(self):
         self.mail.logout()

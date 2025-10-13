@@ -32,3 +32,38 @@
         "sources": "http://127.0.0.1:5500/index.html"
     }
 }
+
+{
+    "user_id": 0,
+    "recipient": null,
+    "token_api": "",
+    "opportunity_status": null,
+    "opp_type_source": "https://bmate.getflycrm.com",
+    "opp_source_content": "http://127.0.0.1",
+    "account_type": [],
+    "key": "QQtBtzyGuvbDiFLE0Z1w4IO8cCkc1c0V5XWyn8iNh7YeUk8HO6",
+    "opp_url_source": "http://127.0.0.1:5500/index.html",
+    "account_name": "Dev Test - 6ddacbf9",
+    "account_description": "This is test",
+    "account_email": "'dev3196c773.test@bmate.com'",
+    "account_phone": "818036268659",
+    "custom_fields": {
+        "ngay_khach_contact": "10/10/2025",
+        "visa": null,
+        "ngay_du_kien_vao_nha": "01/05/2026",
+        "ngan_sach_tien_thue": null,
+        "overseas_dang_o_nhat": null,
+        "nuoi_pet": null,
+        "nen_tang_lien_he": null
+    },
+    "utm_params": {
+        "utm_source": "",
+        "utm_campaign": "",
+        "utm_medium": "",
+        "utm_content": "",
+        "utm_term": "",
+        "utm_user": "",
+        "utm_account": "",
+        "sources": "http://127.0.0.1:5500/index.html"
+    }
+}
