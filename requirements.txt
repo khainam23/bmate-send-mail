@@ -1,7 +1,6 @@
 # FastAPI and ASGI server
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
-gunicorn==21.2.0
 
 # Scheduler
 apscheduler==3.10.4
@@ -10,23 +9,17 @@ apscheduler==3.10.4
 pydantic==2.5.0
 pydantic-settings==2.1.0
 
-# HTTP client for crawling
-httpx==0.25.2
-aiohttp==3.9.1
-
-# HTML parsing
-beautifulsoup4==4.12.2
-lxml==4.9.3
+# MongoDB driver
+pymongo==4.6.1
 
 # Environment variables
 python-dotenv==1.0.0
 
-# Logging
-loguru==0.7.2
+# HTTP client
+requests==2.32.5
 
 # Development dependencies
 pytest==7.4.3
 pytest-asyncio==0.21.1
 black==23.11.0
 flake8==6.1.0
-requests==2.32.5

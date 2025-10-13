@@ -2,7 +2,6 @@
 MongoDB connection
 """
 import logging
-from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import MongoClient
 
 from app.core.config import settings
