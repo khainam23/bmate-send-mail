@@ -547,8 +547,10 @@ class EmailExtract:
             
             if response.status_code == 200:
                 print(f"✅ Gửi API thành công! Response: {response.text[:200]}")
-                # Xóa bản ghi
-                collection.delete_one({"_id": _id})
+                collection.update_one(
+                    {"_id": _id},
+                    {"$set": {"can_send": False, "success": "Send success"}}
+                )
                 return True
             else:
                 print(f"⚠️ API trả về status: {response.status_code}, Response: {response.text[:200]}")
@@ -561,6 +563,10 @@ class EmailExtract:
 
         except Exception as e:
             print(f"❌ Lỗi: {str(e)}")
+            collection.update_one(
+                {"_id": _id},
+                {"$set": {"can_send": False, "error": str(e)}}
+            )
             return False
     
     def logout(self):
