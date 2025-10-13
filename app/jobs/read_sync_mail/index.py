@@ -1,4 +1,4 @@
-import imaplib, time, json, re, requests
+import imaplib, time, json, re, requests, logging
 from email.header import decode_header
 from typing import Final
 from email import message_from_bytes
@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 
 from app.core.config import settings
 from app.db.mongodb import mongodb
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 # ==============================
 # Cấu hình
@@ -52,7 +55,7 @@ class EmailExtract:
     def login(self):
         self.mail = imaplib.IMAP4_SSL(IMAP_SERVER)
         self.mail.login(EMAIL_ACCOUNT, EMAIL_PASSWORD)
-        print("Đã đăng nhập thành công!")
+        logger.info("✅ Đã đăng nhập IMAP thành công!")
         self.mail.select(WHERE_READ_EMAIL)  # READ-WRITE mode để có thể set Seen
 
     def _init_queue(self):
@@ -64,13 +67,13 @@ class EmailExtract:
             self.processed_emails.clear()
             days_range = 30 # chỉ lưu trong 30 ngày từ ngày chạy dự án
             self.queue_refresh_time = current_time + timedelta(days=days_range)
-            print(f"🔄 Queue đã được refresh. Sẽ refresh lại vào: {self.queue_refresh_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            logger.info(f"🔄 Queue đã được refresh. Sẽ refresh lại vào: {self.queue_refresh_time.strftime('%Y-%m-%d %H:%M:%S')}")
             
             # Hiển thị thông tin whitelist
             if self.allowed_senders:
-                print(f"📋 Whitelist sender: {', '.join(self.allowed_senders)}")
+                logger.info(f"📋 Whitelist sender: {', '.join(self.allowed_senders)}")
             else:
-                print("📋 Whitelist sender: Không giới hạn (cho phép tất cả)")
+                logger.info("📋 Whitelist sender: Không giới hạn (cho phép tất cả)")
 
     def _check_and_refresh_queue(self):
         """Kiểm tra và refresh queue nếu cần"""
@@ -143,7 +146,7 @@ class EmailExtract:
         
         status, data = self.mail.search(None, search_criteria)
         if status != "OK":
-            print("Không lấy được email.")
+            logger.error("❌ Không lấy được email từ IMAP server.")
             return []
 
         mail_ids = data[0].split()
@@ -180,7 +183,7 @@ class EmailExtract:
         """Lấy email chỉ theo HTML, không mark Seen tự động"""
         status, data = self.mail.fetch(mail_id, '(BODY.PEEK[])')
         if status != "OK":
-            print(f"Không lấy được email {mail_id.decode()}")
+            logger.error(f"❌ Không lấy được email {mail_id.decode()}")
             return None, None, None, None, None
 
         raw_email = data[0][1]
@@ -205,7 +208,7 @@ class EmailExtract:
                 # Chuyển về local timezone và format theo định dạng mong muốn
                 email_date = email_datetime.astimezone().strftime("%d/%m/%Y")
             except Exception as e:
-                print(f"⚠️  Không thể parse email date: {e}")
+                logger.warning(f"⚠️  Không thể parse email date: {e}")
                 email_date = None
 
         # Lấy body HTML
@@ -375,15 +378,15 @@ class EmailExtract:
         self._check_and_refresh_queue()
         
         mail_ids = self.list_email_ids(30)
-        print(f"📧 Tìm thấy {len(mail_ids)} email(s)")
-        print(f"📊 Queue hiện tại: {len(self.processed_emails)} email đã xử lý")
+        logger.info(f"📧 Tìm thấy {len(mail_ids)} email(s)")
+        logger.info(f"📊 Queue hiện tại: {len(self.processed_emails)} email đã xử lý")
         
         new_emails_count = 0
         store_data = []
         for mail_id in mail_ids:
             # Kiểm tra email đã được xử lý chưa (chỉ theo mail_id)
             if self._is_email_processed(mail_id):
-                print(f"⏭️  Bỏ qua email ID {mail_id.decode()} (đã xử lý)")
+                logger.debug(f"⏭️  Bỏ qua email ID {mail_id.decode()} (đã xử lý)")
                 continue
             
             new_emails_count += 1
@@ -393,41 +396,41 @@ class EmailExtract:
             
             # Kiểm tra sender có được phép không
             if not self._is_sender_allowed(from_):
-                print(f"🚫 Bỏ qua email từ sender không được phép: {from_}")
+                logger.info(f"🚫 Bỏ qua email từ sender không được phép: {from_}")
                 self._mark_email_processed(mail_id)
                 continue
 
             # Kiểm tra xem email này có phải là reply của thread đã xử lý không
             if self._is_email_processed(mail_id, msg):
-                print(f"⏭️  Bỏ qua email '{subject}' (thread đã xử lý - có thể là reply)")
+                logger.debug(f"⏭️  Bỏ qua email '{subject}' (thread đã xử lý - có thể là reply)")
                 self._mark_email_processed(mail_id)
                 continue
 
             extracted_data = self.check_email_format(subject, body, email_date)
             if extracted_data:
-                print("✅ Email hợp lệ - Dữ liệu trích xuất:")
-                print(f"  - Tên: {extracted_data['name']}")
-                print(f"  - Email: {extracted_data['email']}")
-                print(f"  - Ngày dự kiến: {extracted_data['date']}")
-                print(f"  - Nội dung: {extracted_data['content']}")
+                logger.info("✅ Email hợp lệ - Dữ liệu trích xuất:")
+                logger.info(f"  - Tên: {extracted_data['name']}")
+                logger.info(f"  - Email: {extracted_data['email']}")
+                logger.info(f"  - Ngày dự kiến: {extracted_data['date']}")
+                logger.info(f"  - Nội dung: {extracted_data['content']}")
                 
                 # In các trường tùy chọn nếu có
                 if extracted_data.get('phone'):
-                    print(f"  - Số điện thoại: {extracted_data['phone']}")
+                    logger.info(f"  - Số điện thoại: {extracted_data['phone']}")
                 if extracted_data.get('visa'):
-                    print(f"  - Visa: {extracted_data['visa']}")
+                    logger.info(f"  - Visa: {extracted_data['visa']}")
                 if extracted_data.get('budget'):
-                    print(f"  - Ngân sách: {extracted_data['budget']}")
+                    logger.info(f"  - Ngân sách: {extracted_data['budget']}")
                 if extracted_data.get('overseas'):
-                    print(f"  - Đang ở nước ngoài: {extracted_data['overseas']}")
+                    logger.info(f"  - Đang ở nước ngoài: {extracted_data['overseas']}")
                 if extracted_data.get('pet'):
-                    print(f"  - Nuôi pet: {extracted_data['pet']}")
+                    logger.info(f"  - Nuôi pet: {extracted_data['pet']}")
                 if extracted_data.get('contact_platform'):
-                    print(f"  - Nền tảng liên hệ: {extracted_data['contact_platform']}")
+                    logger.info(f"  - Nền tảng liên hệ: {extracted_data['contact_platform']}")
                 if extracted_data.get('contact_date'):
-                    print(f"  - Ngày contact: {extracted_data['contact_date']}")
+                    logger.info(f"  - Ngày contact: {extracted_data['contact_date']}")
                 
-                print("Đã ghi nhận lại...")
+                logger.info("💾 Đã ghi nhận lại...")
                 store_data.append({
                     "email_id": mail_id.decode(),
                     "data": extracted_data,
@@ -440,40 +443,44 @@ class EmailExtract:
                 self._mark_email_processed(mail_id, msg)
             else:
                 # Email không hợp lệ hoặc thiếu trường bắt buộc → giữ unseen
-                print(f"\n❌ Email không hợp lệ: {subject}")
-                print(f"   📧 From: {from_}")
+                logger.warning(f"\n❌ Email không hợp lệ: {subject}")
+                logger.warning(f"   📧 From: {from_}")
                 
                 # Hiển thị thông tin debug về các trường bị thiếu
                 if extracted_data is None:
-                    print("   ⚠️  Body email trống hoặc không có dữ liệu")
+                    logger.warning("   ⚠️  Body email trống hoặc không có dữ liệu")
                 else:
                     missing_fields = extracted_data.get('_missing_fields', [])
                     if missing_fields:
-                        print(f"   ⚠️  Thiếu các trường bắt buộc: {', '.join(missing_fields)}")
+                        logger.warning(f"   ⚠️  Thiếu các trường bắt buộc: {', '.join(missing_fields)}")
                     
                     # Hiển thị các trường đã trích xuất được
-                    print("   📋 Các trường đã trích xuất:")
-                    print(f"      - Name: {extracted_data.get('name') or '❌ THIẾU'}")
-                    print(f"      - Email: {extracted_data.get('email') or '❌ THIẾU'}")
-                    print(f"      - Phone: {extracted_data.get('phone') or '❌ THIẾU'}")
-                    print(f"      - Contact Date: {extracted_data.get('contact_date') or '❌ THIẾU'}")
-                    print(f"      - Content: {extracted_data.get('content') or '❌ THIẾU'}")
+                    logger.debug("   📋 Các trường đã trích xuất:")
+                    logger.debug(f"      - Name: {extracted_data.get('name') or '❌ THIẾU'}")
+                    logger.debug(f"      - Email: {extracted_data.get('email') or '❌ THIẾU'}")
+                    logger.debug(f"      - Phone: {extracted_data.get('phone') or '❌ THIẾU'}")
+                    logger.debug(f"      - Contact Date: {extracted_data.get('contact_date') or '❌ THIẾU'}")
+                    logger.debug(f"      - Content: {extracted_data.get('content') or '❌ THIẾU'}")
                 
                 # Vẫn đánh dấu đã xử lý để không kiểm tra lại
                 self._mark_email_processed(mail_id)
         
-        print(f"✨ Hoàn thành! Đã tìm thấy {new_emails_count} email mới")
-        print("Bắt đầu lưu vào db...")
+        logger.info(f"✨ Hoàn thành! Đã tìm thấy {new_emails_count} email mới")
+        logger.info("💾 Bắt đầu lưu vào db...")
         self.save_db(store_data)
         
     def save_db(self, store_data):
         collection = mongodb.get_collection(settings.NAME_COLLECTION_MODEL_SEND_MAIL)
       
         if not store_data or len(store_data) == 0:
+            logger.info("ℹ️  Không có dữ liệu mới để lưu vào DB")
             return  # tránh insert rỗng
         
-        collection.insert_many(store_data, ordered=False) # import song song có lỗi vẫn làm tiếp
-        print(f"💾 Đã lưu {len(store_data)} email vào DB")
+        try:
+            collection.insert_many(store_data, ordered=False) # import song song có lỗi vẫn làm tiếp
+            logger.info(f"✅ Đã lưu {len(store_data)} email vào DB")
+        except Exception as e:
+            logger.error(f"❌ Lỗi khi lưu vào DB: {e}", exc_info=True)
         
     def call_api(self):
         try:
@@ -484,11 +491,13 @@ class EmailExtract:
             )
             
             if not extracted_data or not extracted_data.get("data"):
-                print("Không có dữ liệu để gửi API")
+                logger.info("ℹ️  Không có dữ liệu để gửi API")
                 return
             
             _id = extracted_data['_id']
             extracted_data = extracted_data["data"]
+            
+            logger.info(f"📤 Chuẩn bị gửi dữ liệu đến CRM: {extracted_data.get('name')} - {extracted_data.get('email')}")
             
             url = settings.URL_CALL_CRM_BMATE
             
@@ -546,14 +555,14 @@ class EmailExtract:
             response = requests.post(url, json=data_form)
             
             if response.status_code == 200:
-                print(f"✅ Gửi API thành công! Response: {response.text[:200]}")
+                logger.info(f"✅ Gửi API thành công! Response: {response.text[:200]}")
                 collection.update_one(
                     {"_id": _id},
                     {"$set": {"can_send": False, "success": "Send success"}}
                 )
                 return True
             else:
-                print(f"⚠️ API trả về status: {response.status_code}, Response: {response.text[:200]}")
+                logger.warning(f"⚠️ API trả về status: {response.status_code}, Response: {response.text[:200]}")
                 # Đánh trường can_send là False và thêm trường error nhận được cho nó
                 collection.update_one(
                     {"_id": _id},
@@ -562,14 +571,21 @@ class EmailExtract:
                 return False
 
         except Exception as e:
-            print(f"❌ Lỗi: {str(e)}")
-            collection.update_one(
-                {"_id": _id},
-                {"$set": {"can_send": False, "error": str(e)}}
-            )
+            logger.error(f"❌ Lỗi khi gửi API: {str(e)}", exc_info=True)
+            try:
+                collection.update_one(
+                    {"_id": _id},
+                    {"$set": {"can_send": False, "error": str(e)}}
+                )
+            except:
+                pass
             return False
     
     def logout(self):
-        self.mail.logout()
+        try:
+            self.mail.logout()
+            logger.info("👋 Đã đăng xuất IMAP")
+        except Exception as e:
+            logger.error(f"❌ Lỗi khi đăng xuất IMAP: {e}")
         
 email_extarct = EmailExtract(None, set(), None)

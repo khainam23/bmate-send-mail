@@ -2,11 +2,23 @@
 Gunicorn/Uvicorn entrypoint
 """
 import sys
+import logging
 from pathlib import Path
 
 # Add the project root to Python path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
+
+# Configure logging để hiển thị logs trong Docker
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ],
+    force=True
+)
+logger = logging.getLogger(__name__)
 
 # Import after adding to path
 from app.main import app

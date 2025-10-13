@@ -9,11 +9,11 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-async def sync_email_job():
+def sync_email_job():
     """Job that reads and processes emails from IMAP server"""
     try:
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        logger.info(f"Starting email sync job at {current_time}")
+        logger.info(f"📧 Starting email sync job at {current_time}")
         
         # Initialize email extractor and process emails
         email_extractor.login()
@@ -21,12 +21,12 @@ async def sync_email_job():
         email_extractor.logout()
         
         message = f"Email sync job completed successfully at {current_time}"
-        logger.info(message)
+        logger.info(f"✅ {message}")
         
         return {"status": "success", "message": message}
     except Exception as e:
         error_msg = f"Email sync job failed: {e}"
-        logger.error(error_msg, exc_info=True)
+        logger.error(f"❌ {error_msg}", exc_info=True)
         return {"status": "error", "message": error_msg}
 
 def add_sync_email_jobs(scheduler):
@@ -39,4 +39,4 @@ def add_sync_email_jobs(scheduler):
         replace_existing=True
     )
     
-    logger.info("Email sync jobs added to scheduler")
+    logger.info(f"📧 Email sync job added to scheduler (interval: {settings.EMAIL_TIME_RANGE_MINUTES} minutes)")

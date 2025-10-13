@@ -23,8 +23,8 @@ class Settings(BaseSettings):
     HOST_IMAP: str = 'imap.server'
     EMAIL_ADDRESS: str = 'abc@gmail.com'
     EMAIL_PASSWORD_APP: str = 'abc'
-    EMAIL_TIME_RANGE_MINUTES: int = 30  # Lấy email trong N phút gần nhất
-    EMAIL_TIME_SEND: int = 5 # Thời gian gửi mail mỗi job
+    EMAIL_TIME_RANGE_MINUTES: int = 5  # Lấy email trong N phút gần nhất
+    EMAIL_TIME_SEND: int = 1 # Thời gian gửi mail mỗi job
     # Danh sách email được phép, cách nhau bởi dấu phẩy (để trống = cho phép tất cả)
     ALLOWED_SENDERS: str = 'khainam23@gmail.com'  
     # ALLOWED_SENDERS: str = ' noreply@realestate.co.jp' 
