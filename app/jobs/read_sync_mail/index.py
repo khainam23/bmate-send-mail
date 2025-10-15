@@ -13,15 +13,18 @@ logger = logging.getLogger(__name__)
 # ==============================
 # Cấu hình
 # ==============================
-IMAP_SERVER: Final = settings.HOST_IMAP
-EMAIL_ACCOUNT: Final = settings.EMAIL_ADDRESS
-EMAIL_PASSWORD: Final = settings.EMAIL_PASSWORD_APP
+# IMAP_SERVER: Final = settings.HOST_IMAP
+# EMAIL_ACCOUNT: Final = settings.EMAIL_ADDRESS
+# EMAIL_PASSWORD: Final = settings.EMAIL_PASSWORD_APP
 WHERE_READ_EMAIL: str = 'INBOX'
 READ_TYPE_EMAIL: str = 'ALL'
 
 
 class EmailExtract:
-    def __init__(self, mail, processed_emails, queue_refresh_time):
+    def __init__(self, imap_server, email_account, email_password ,mail, processed_emails, queue_refresh_time):
+        self.imap_server = imap_server
+        self.email_account = email_account
+        self.email_password = email_password
         self.mail = mail
         self.processed_emails = processed_emails
         self.queue_refresh_time = queue_refresh_time
@@ -53,8 +56,8 @@ class EmailExtract:
         return sender_email in self.allowed_senders
         
     def login(self):
-        self.mail = imaplib.IMAP4_SSL(IMAP_SERVER)
-        self.mail.login(EMAIL_ACCOUNT, EMAIL_PASSWORD)
+        self.mail = imaplib.IMAP4_SSL(self.imap_server)
+        self.mail.login(self.email_account, self.email_password)
         logger.info("✅ Đã đăng nhập IMAP thành công!")
         self.mail.select(WHERE_READ_EMAIL)  # READ-WRITE mode để có thể set Seen
 
@@ -588,4 +591,4 @@ class EmailExtract:
         except Exception as e:
             logger.error(f"❌ Lỗi khi đăng xuất IMAP: {e}")
         
-email_extarct = EmailExtract(None, set(), None)
+email_extarct = EmailExtract('', '', '',None, set(), None)

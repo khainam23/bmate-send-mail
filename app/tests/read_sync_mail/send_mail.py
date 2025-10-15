@@ -8,9 +8,9 @@ from email.mime.text import MIMEText
 from app.core.config import settings
 
 # --- Cấu hình người gửi và người nhận ---
-sender_email = settings.EMAIL_ADDRESS
-receiver_email = settings.EMAIL_ADDRESS
-password = settings.EMAIL_PASSWORD_APP  # dùng App Password nếu là Gmail
+sender_email = settings.EMAIL_ADDRESS_2
+receiver_email = settings.EMAIL_ADDRESS_2
+password = settings.EMAIL_PASSWORD_APP_2  # dùng App Password nếu là Gmail
 
 
 def generate_random_phone():

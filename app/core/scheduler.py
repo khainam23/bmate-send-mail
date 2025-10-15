@@ -38,11 +38,12 @@ def start_scheduler():
     """Start the scheduler"""
     try:
         # Import and add jobs
-        from app.jobs.sync_email_job import add_sync_email_jobs
+        from app.jobs.sync_email_job import add_sync_email_1_jobs, add_sync_email_2_jobs
         from app.jobs.send_mail_job import add_send_mail_jobs
         
         logger.info("🔧 Adding jobs to scheduler...")
-        add_sync_email_jobs(scheduler)
+        add_sync_email_1_jobs(scheduler)
+        add_sync_email_2_jobs(scheduler)
         add_send_mail_jobs(scheduler)
         
         scheduler.start()

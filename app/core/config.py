@@ -20,9 +20,14 @@ class Settings(BaseSettings):
     SCHEDULER_TIMEZONE: str = "UTC"
     
     # MAIL
-    HOST_IMAP: str = 'imap.server'
-    EMAIL_ADDRESS: str = 'abc@gmail.com'
-    EMAIL_PASSWORD_APP: str = 'abc'
+    HOST_IMAP_1: str = 'imap.server'
+    EMAIL_ADDRESS_1: str = 'abc@gmail.com'
+    EMAIL_PASSWORD_APP_1: str = 'abc'
+    
+    HOST_IMAP_2: str = 'imap.server'
+    EMAIL_ADDRESS_2: str = 'abc@gmail.com'
+    EMAIL_PASSWORD_APP_2: str = 'abc'
+    
     EMAIL_TIME_RANGE_MINUTES: int = 5  # Lấy email trong N phút gần nhất
     EMAIL_TIME_SEND: int = 1 # Thời gian gửi mail mỗi job
     # Danh sách email được phép, cách nhau bởi dấu phẩy (để trống = cho phép tất cả)

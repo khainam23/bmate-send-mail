@@ -7,7 +7,6 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 async def hello_world_job():
-    """Simple job that prints Hello World to the console"""
     try:
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         message = f"Hello World! Current time: {current_time}"
@@ -22,8 +21,6 @@ async def hello_world_job():
         return {"status": "error", "message": error_msg}
 
 def add_print_jobs(scheduler):
-    """Add print jobs to scheduler"""
-    # Run hello world job every minute for testing
     scheduler.add_job(
         hello_world_job,
         'interval',
