@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     EMAIL_TIME_SEND: int = 1 # Thời gian gửi mail mỗi job
     # Danh sách email được phép, cách nhau bởi dấu phẩy (để trống = cho phép tất cả)
     ALLOWED_SENDERS: str = 'khainam23@gmail.com'  
-    # ALLOWED_SENDERS: str = ' noreply@realestate.co.jp' 
+    # ALLOWED_SENDERS: str = 'noreply@realestate.co.jp' 
     NAME_COLLECTION_MODEL_SEND_MAIL: str = 'model_mail'
     
     # CRM
