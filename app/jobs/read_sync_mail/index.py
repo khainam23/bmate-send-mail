@@ -207,9 +207,7 @@ class EmailExtract:
             try:
                 # Parse email date từ header
                 from email.utils import parsedate_to_datetime
-                email_datetime = parsedate_to_datetime(date_header)
-                # Chuyển về local timezone và format theo định dạng mong muốn
-                email_date = email_datetime.astimezone().strftime("%d/%m/%Y")
+                email_date = parsedate_to_datetime(date_header)
             except Exception as e:
                 logger.warning(f"⚠️  Không thể parse email date: {e}")
                 email_date = None
@@ -283,10 +281,34 @@ class EmailExtract:
             r'Date:\s*(\d{1,2}/\d{1,2}/\d{4})',
             r'Move\s+In:\s*([^\n\r]+)'
         ]
+
         for pattern in date_patterns:
             date_match = re.search(pattern, body, re.IGNORECASE)
             if date_match:
-                extracted_data['date'] = date_match.group(1).strip()
+                date_str = date_match.group(1).strip()
+                parsed_date = None
+
+                # thử nhiều định dạng phổ biến
+                for fmt in ['%d/%m/%Y', '%m/%d/%Y', '%Y-%m-%d', '%d-%m-%Y']:
+                    try:
+                        parsed_date = datetime.strptime(date_str, fmt)
+                        break
+                    except ValueError:
+                        continue
+
+                if parsed_date:
+                    # 🔹 Dùng timezone của email_date nếu có
+                    if email_date and email_date.tzinfo is not None:
+                        parsed_date = parsed_date.replace(tzinfo=email_date.tzinfo)
+                        timestamp = int(parsed_date.timestamp())
+                    else:
+                        # nếu không có tzinfo thì coi như naive (local)
+                        timestamp = int(parsed_date.astimezone().timestamp())
+
+                    extracted_data['date'] = timestamp
+                else:
+                    extracted_data['date'] = date_str
+
                 break
         
         # Trích xuất Content/Inquiry
@@ -358,12 +380,28 @@ class EmailExtract:
         # Trích xuất Contact Date (Ngày khách contact)
         # Ngày khách liên lạc lấy theo ngày nhận được email
         if email_date:
-            extracted_data['contact_date'] = email_date
+            from datetime import timezone
+
+            try:
+                if email_date.tzinfo is not None:
+                    # Nếu có tzinfo, convert về UTC rồi lấy timestamp
+                    email_timestamp = int(email_date.astimezone(timezone.utc).timestamp())
+                else:
+                    # Nếu không có tzinfo (naive datetime)
+                    # => gắn local timezone rồi convert về UTC
+                    local_dt = email_date.astimezone()  # hệ thống tự chọn tz local
+                    email_timestamp = int(local_dt.timestamp())
+
+                extracted_data["contact_date"] = email_timestamp
+
+            except Exception as e:
+                logger.warning(f"⚠️ Không thể parse email date: {e}")
+                extracted_data["contact_date"] = None
+
         
         # Kiểm tra xem có đủ TẤT CẢ các trường bắt buộc không
         required_fields = {
             'name': extracted_data['name'],
-            'phone': extracted_data['phone'],
             'email': extracted_data['email'],
             'contact_date': extracted_data['contact_date'],
             'content': extracted_data['content']
@@ -389,7 +427,6 @@ class EmailExtract:
         for mail_id in mail_ids:
             # Kiểm tra email đã được xử lý chưa (chỉ theo mail_id)
             if self._is_email_processed(mail_id):
-                logger.debug(f"⏭️  Bỏ qua email ID {mail_id.decode()} (đã xử lý)")
                 continue
             
             new_emails_count += 1
@@ -405,35 +442,12 @@ class EmailExtract:
 
             # Kiểm tra xem email này có phải là reply của thread đã xử lý không
             if self._is_email_processed(mail_id, msg):
-                logger.debug(f"⏭️  Bỏ qua email '{subject}' (thread đã xử lý - có thể là reply)")
                 self._mark_email_processed(mail_id)
                 continue
 
             extracted_data = self.check_email_format(subject, body, email_date)
             if extracted_data:
-                logger.info("✅ Email hợp lệ - Dữ liệu trích xuất:")
-                logger.info(f"  - Tên: {extracted_data['name']}")
-                logger.info(f"  - Email: {extracted_data['email']}")
-                logger.info(f"  - Ngày dự kiến: {extracted_data['date']}")
-                logger.info(f"  - Nội dung: {extracted_data['content']}")
-                
-                # In các trường tùy chọn nếu có
-                if extracted_data.get('phone'):
-                    logger.info(f"  - Số điện thoại: {extracted_data['phone']}")
-                if extracted_data.get('visa'):
-                    logger.info(f"  - Visa: {extracted_data['visa']}")
-                if extracted_data.get('budget'):
-                    logger.info(f"  - Ngân sách: {extracted_data['budget']}")
-                if extracted_data.get('overseas'):
-                    logger.info(f"  - Đang ở nước ngoài: {extracted_data['overseas']}")
-                if extracted_data.get('pet'):
-                    logger.info(f"  - Nuôi pet: {extracted_data['pet']}")
-                if extracted_data.get('contact_platform'):
-                    logger.info(f"  - Nền tảng liên hệ: {extracted_data['contact_platform']}")
-                if extracted_data.get('contact_date'):
-                    logger.info(f"  - Ngày contact: {extracted_data['contact_date']}")
-                
-                logger.info("💾 Đã ghi nhận lại...")
+                logger.info(f"✅ Email hợp lệ: {extracted_data.get('name')} ({extracted_data.get('email')})")
                 store_data.append({
                     "email_id": mail_id.decode(),
                     "data": extracted_data,
@@ -445,25 +459,8 @@ class EmailExtract:
                 # Đánh dấu email và thread đã xử lý
                 self._mark_email_processed(mail_id, msg)
             else:
-                # Email không hợp lệ hoặc thiếu trường bắt buộc → giữ unseen
-                logger.warning(f"\n❌ Email không hợp lệ: {subject}")
-                logger.warning(f"   📧 From: {from_}")
-                
-                # Hiển thị thông tin debug về các trường bị thiếu
-                if extracted_data is None:
-                    logger.warning("   ⚠️  Body email trống hoặc không có dữ liệu")
-                else:
-                    missing_fields = extracted_data.get('_missing_fields', [])
-                    if missing_fields:
-                        logger.warning(f"   ⚠️  Thiếu các trường bắt buộc: {', '.join(missing_fields)}")
-                    
-                    # Hiển thị các trường đã trích xuất được
-                    logger.debug("   📋 Các trường đã trích xuất:")
-                    logger.debug(f"      - Name: {extracted_data.get('name') or '❌ THIẾU'}")
-                    logger.debug(f"      - Email: {extracted_data.get('email') or '❌ THIẾU'}")
-                    logger.debug(f"      - Phone: {extracted_data.get('phone') or '❌ THIẾU'}")
-                    logger.debug(f"      - Contact Date: {extracted_data.get('contact_date') or '❌ THIẾU'}")
-                    logger.debug(f"      - Content: {extracted_data.get('content') or '❌ THIẾU'}")
+                # Email không hợp lệ hoặc thiếu trường bắt buộc
+                logger.warning(f"❌ Email không hợp lệ: {subject}")
                 
                 # Vẫn đánh dấu đã xử lý để không kiểm tra lại
                 self._mark_email_processed(mail_id)
@@ -487,7 +484,34 @@ class EmailExtract:
         
     def call_api(self):
         try:
+            session = requests.Session()
+            
+            # Trước tiên cứ login vào
+            response_login = session.post(settings.URL_LOGIN_CRM_BMATE, json={
+                "user_username": settings.ACCOUNT_ADMIN,
+                "user_password": settings.PASSWORD_ADMIN
+            })
+            
+            if response_login.status_code != 200:
+                logger.error(f"❌ Lỗi khi login CRM: Status {response_login.status_code}, Response: {response_login.text[:200]}")
+                return False
+            
+            token = response_login.json().get('token', '')
+            
+            # Sau đó gọi refresh token
+            refresh_token = session.post(settings.URL_REFRESH_TOKEN_CRM_BMATE, json={
+               "refresh_token": token
+            })
+            
+            if refresh_token.status_code != 200:
+                logger.error(f"❌ Lỗi khi refresh token CRM: Status {refresh_token.status_code}, Response: {refresh_token.text[:200]}")
+                return False
+            
+            access_token = refresh_token.json().get('access_token', '')
+            
+             # Cuối cùng là gửi mail          
             collection = mongodb.get_collection(settings.NAME_COLLECTION_MODEL_SEND_MAIL)
+            
             extracted_data = collection.find_one(
                 {"can_send": True},
                 sort=[("created_at", -1)]
@@ -505,59 +529,52 @@ class EmailExtract:
             url = settings.URL_CALL_CRM_BMATE
             
             json_data = {
-                "user_id": 0,
-                "recipient": None,
-                "token_api": "",
-                "opportunity_status": None,
-                "opp_type_source": "https://bmate.getflycrm.com",
-                "opp_source_content": "http://127.0.0.1",
-                "account_type": [],
-                "key": settings.KEY_CALL_CRM_BMATE,
-                "opp_url_source": "http://127.0.0.1:5500/index.html",
+                "account_manager": 1,
                 "account_name": extracted_data.get('name', ""),
-                "account_description": extracted_data.get('content', ""),
-                "account_email": extracted_data.get('email', ""),
-                "account_phone": extracted_data.get('phone', ""),
+                "account_source": [
+                    17
+                ],
+                "relation_id": 1,
+                "country_id": 1,
+                "description": extracted_data.get('content', ""),
+                "contacts": [
+                    {
+                        "honorifics": extracted_data.get('name', ""),
+                        "first_name": extracted_data.get('name', ""),
+                        "title": extracted_data.get('name', ""),
+                        "phone_home": extracted_data.get('phone', ""),
+                        "email": extracted_data.get('email', ""),
+                        "birthdate": None,
+                        "gender_id": None,
+                        "description": extracted_data.get('content', ""),
+                        "email_unsubcribe": 0,
+                        "is_primary": 1
+                    }
+                ],
                 "custom_fields": {
-                    "ngay_khach_contact": extracted_data.get('contact_date') or "",
-                    "visa": extracted_data.get('visa') or "",
-                    "ngay_du_kien_vao_nha": extracted_data.get('date') or "",
-                    "ngan_sach_tien_thue": extracted_data.get('budget') or "",
+                    "ngay_khach_contact": extracted_data.get('contact_date') or int(datetime.now().timestamp()),
+                    "ngay_du_kien_vao_nha": extracted_data.get('date') or 0,
+                    "ngan_sach_tien_thue": extracted_data.get('budget') or 0,
                     "overseas_dang_o_nhat": extracted_data.get('overseas') or "",
+                    "nen_tang_lien_he": [
+                        1
+                    ],
+                    "visa": extracted_data.get('visa') or "",
                     "nuoi_pet": extracted_data.get('pet') or "",
-                    "nen_tang_lien_he": extracted_data.get('contact_platform') or ""
-                },
-                "utm_params": {
-                    "utm_source": "",
-                    "utm_campaign": "",
-                    "utm_medium": "",
-                    "utm_content": "",
-                    "utm_term": "",
-                    "utm_user": "",
-                    "utm_account": "",
-                    "sources": "http://127.0.0.1:5500/index.html"
+                    "ghi_chu": extracted_data.get('content', "")
                 }
             }
             
-            def none_to_empty(value):
-                if isinstance(value, dict):
-                    return {k: none_to_empty(v) for k, v in value.items()}
-                elif isinstance(value, list):
-                    return [none_to_empty(v) for v in value]
-                elif value is None:
-                    return ""
-                return value
-            
-            json_data = none_to_empty(json_data)
-            
-            data_form = {
-                "data_form": json.dumps(json_data),
-                "verify_with_google_recaptcha": False
+            headers = {
+                "Authorization": f"{access_token}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36 Edg/141.0.0.0"
             }
             
-            response = requests.post(url, json=data_form)
+            response = session.post(url, json=json_data, headers=headers)
             
-            if response.status_code == 200:
+            if response.status_code >= 200 and response.status_code < 300:
                 logger.info(f"✅ Gửi API thành công! Response: {response.text[:200]}")
                 collection.update_one(
                     {"_id": _id},
@@ -569,7 +586,7 @@ class EmailExtract:
                 # Đánh trường can_send là False và thêm trường error nhận được cho nó
                 collection.update_one(
                     {"_id": _id},
-                    {"$set": {"can_send": False, "error": response.text[:500]}}
+                    {"$set": {"can_send": False, "error": response.text}}
                 )
                 return False
 
@@ -580,7 +597,8 @@ class EmailExtract:
                     {"_id": _id},
                     {"$set": {"can_send": False, "error": str(e)}}
                 )
-            except:
+            except Exception as db_error:
+                logger.error(f"❌ Không thể cập nhật MongoDB: {str(db_error)}", exc_info=True)
                 pass
             return False
     
@@ -592,3 +610,7 @@ class EmailExtract:
             logger.error(f"❌ Lỗi khi đăng xuất IMAP: {e}")
         
 email_extarct = EmailExtract('', '', '',None, set(), None)
+
+
+if __name__ == "__main__":
+    email_extarct.call_api()

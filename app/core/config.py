@@ -31,13 +31,21 @@ class Settings(BaseSettings):
     EMAIL_TIME_RANGE_MINUTES: int = 5  # Lấy email trong N phút gần nhất
     EMAIL_TIME_SEND: int = 1 # Thời gian gửi mail mỗi job
     # Danh sách email được phép, cách nhau bởi dấu phẩy (để trống = cho phép tất cả)
-    ALLOWED_SENDERS: str = 'khainam23@gmail.com'  
-    # ALLOWED_SENDERS: str = 'noreply@realestate.co.jp' 
+    ALLOWED_SENDERS: str = 'khainam23@gmail.com'
+    # ALLOWED_SENDERS: str = 'noreply@realestate.co.jp'
     NAME_COLLECTION_MODEL_SEND_MAIL: str = 'model_mail'
     
     # CRM
     URL_CALL_CRM_BMATE: str = "url get"
     KEY_CALL_CRM_BMATE: str = "key"
+    
+    # Login
+    URL_LOGIN_CRM_BMATE: str = 'url login'
+    ACCOUNT_ADMIN: str = 'admin@gmail.com'
+    PASSWORD_ADMIN: str = 'password'
+    
+    # Refresh Token
+    URL_REFRESH_TOKEN_CRM_BMATE: str = 'url refresh token'
     
     class Config:
         env_file = ".env"

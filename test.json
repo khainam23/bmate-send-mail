@@ -67,3 +67,76 @@
         "sources": "http://127.0.0.1:5500/index.html"
     }
 }
+
+// cho trùng
+
+{
+    "account_manager": 3,
+    "account_name": "Test manual 3",
+    "account_source": [
+        17
+    ],
+    "relation_id": 1,
+    "country_id": 1,
+    "description": "test",
+    "contacts": [
+        {
+            "honorifics": "test",
+            "first_name": "test",
+            "title": "test",
+            "phone_home": "123",
+            "email": "test@gmail.com",
+            "birthdate": 1761238800,
+            "gender_id": 2,
+            "description": "test",
+            "email_unsubcribe": 0,
+            "is_primary": 1
+        }
+    ],
+    "custom_fields": {
+        "ngay_khach_contact": 1761238800,
+        "visa": 11,
+        "ngay_du_kien_vao_nha": 1761325200,
+        "ngan_sach_tien_thue": 1,
+        "overseas_dang_o_nhat": 8,
+        "nuoi_pet": [
+            9,
+            10
+        ],
+        "nen_tang_lien_he": [
+            1
+        ],
+        "ghi_chu": "test"
+    }
+}
+
+
+{
+    "account_manager": 1,
+    "account_name": "Test manual 5",
+    "account_source": [
+        17
+    ],
+    "relation_id": 1,
+    "country_id": 1,
+    "contacts": [
+        {
+            "honorifics": "",
+            "first_name": "",
+            "title": "",
+            "phone_home": "",
+            "email": "",
+            "birthdate": null,
+            "gender_id": null,
+            "description": "",
+            "email_unsubcribe": 0,
+            "is_primary": 1
+        }
+    ],
+    "custom_fields": {
+        "ngay_khach_contact": 1761238800,
+        "nen_tang_lien_he": [
+            1
+        ]
+    }
+}

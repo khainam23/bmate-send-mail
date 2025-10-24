@@ -380,6 +380,45 @@ html8 = """
 </html>
 """
 
+
+real_template = """
+<div>
+    <div style="border:1px solid #acacac;width:620px;margin:0 auto;background:#fff">
+     <div style="margin-left:32px">
+      <a href="https://realestate.co.jp/en/" target="_blank" data-saferedirecturl="https://www.google.com/url?q=https://realestate.co.jp/en/&amp;source=gmail&amp;ust=1761296820588000&amp;usg=AOvVaw08oRpQ3o2RmTS1gvuhHuk8"> <img style="border:0" src="https://ci3.googleusercontent.com/meips/ADKq_NYR7v935pdd2xs5kiaMFj8b_246ojrQY0cfb_NrX1f2sDsqjbk3PV5ic0DUVCZJZGV9sLCmqDGUUNXWVk1Rp9BJAHI1ztYWhRcWQJo=s0-d-e1-ft#https://static.realestate.co.jp/img/rej_email_logo.gif" alt="Real Estate Japan" class="CToWUd" data-bit="iit"> </a>
+     </div>
+     <div style="padding:3px 50px 15px">
+      <p>The following is an inquiry lead from Real Estate Japan. Please respond to the client as soon as possible.</p>
+      <h3>Property details:</h3>
+      <ul style="list-style-type:none;padding:0">
+       <li>Property link: <a href="https://realestate.co.jp/en/rent/view/1286374" target="_blank" data-saferedirecturl="https://www.google.com/url?q=https://realestate.co.jp/en/rent/view/1286374&amp;source=gmail&amp;ust=1761296820588000&amp;usg=AOvVaw2FNZOJlYYoP6JuGH5-HlHH">https://realestate.co.jp/en/<wbr>rent/view/1286374</a></li>
+       <li>Property ID: 1286374</li>
+       <li>Property Type: For Rent</li>
+       <li>Building name: HARUMI</li>
+       <li>Unit number: 204</li>
+      </ul>
+      <h3>Customer details:</h3>
+      <ul style="list-style-type:none;padding:0">
+       <li>Name: Test</li>
+       <li>Email: <a href="mailto:anhnhajapan@gmail.com" target="_blank">anhnhajapan@gmail.com</a></li>
+       <li>Inquiry: Test</li>
+      </ul>
+      <p>View all inquiries in your <a href="http://realestate.co.jp" target="_blank" data-saferedirecturl="https://www.google.com/url?q=http://realestate.co.jp&amp;source=gmail&amp;ust=1761296820588000&amp;usg=AOvVaw0GngaS2U3PH2co_XK7zoC0">realestate.co.jp</a> account</p>
+      <p>Please click <a href="https://realestate.co.jp/agent/en/inquiry" target="_blank" data-saferedirecturl="https://www.google.com/url?q=https://realestate.co.jp/agent/en/inquiry&amp;source=gmail&amp;ust=1761296820588000&amp;usg=AOvVaw1b-D1v-_7dQMTrSv85nEZw">here</a></p>
+      <p style="margin-top:23px">Kind regards,
+       <br>
+       Real Estate Japan</p>
+     </div>
+    </div>
+    <div style="font-family:Arial,sans-serif;width:520px;margin:0 auto;font-size:11px;padding:3px 50px;color:#7d7d7d">
+     <p style="line-height:1.3;text-align:center">If you have any questions or concerns, please contact us at 03-5829-5917 or use our online form at <a href="https://realestate.co.jp/en/contact" target="_blank" data-saferedirecturl="https://www.google.com/url?q=https://realestate.co.jp/en/contact&amp;source=gmail&amp;ust=1761296820588000&amp;usg=AOvVaw0FdnsaVmrPi7XS-YYXwcaT">https://realestate.co.jp/en/<wbr>contact</a>.</p>
+     <p style="line-height:1.3;margin:11px 0 0px;text-align:center">This is a post-only mailing. Replies to this message are not monitored or answered.
+      <br>
+      ©2025 GPlusMedia Inc. All Rights Reserved. <a style="text-decoration:none;color:#0071bc" href="https://realestate.co.jp/en/terms-of-use" target="_blank" data-saferedirecturl="https://www.google.com/url?q=https://realestate.co.jp/en/terms-of-use&amp;source=gmail&amp;ust=1761296820588000&amp;usg=AOvVaw2Ou2LI6a1KgTevMF6RGg7H">Terms of Use</a> | <a style="text-decoration:none;color:#0071bc" href="https://realestate.co.jp/en/privacy-policy" target="_blank" data-saferedirecturl="https://www.google.com/url?q=https://realestate.co.jp/en/privacy-policy&amp;source=gmail&amp;ust=1761296820588000&amp;usg=AOvVaw2PYCuUOsdwjG9PV4mTLtgd">Privacy Policy</a></p><div class="yj6qo"></div><div class="adL">
+    </div></div><div class="adL">
+   </div></div>
+"""
+
 # --- Danh sách các template và subject tương ứng ---
 # Tạo danh sách email templates động với UUID và số điện thoại ngẫu nhiên
 email_templates = []
@@ -438,6 +477,10 @@ for prop in inquiry_properties:
 # Thêm các template khác (expiration notices, summaries)
 email_templates.extend([
     {
+        "subject": "New Inquiry Lead from Real Estate Japan",
+        "html": real_template
+    },
+    {
         "subject": "Property Listings Expiring Soon - Action Required",
         "html": html2
     },
@@ -454,6 +497,67 @@ email_templates.extend([
         "html": html8
     }
 ])
+
+
+def send_real_template_emails(count=1, delay=2):
+    """
+    Gửi email chỉ với real_template
+    
+    Args:
+        count (int): Số lượng email muốn gửi
+        delay (int): Thời gian chờ giữa các email (giây)
+    """
+    print(f"🚀 Bắt đầu gửi {count} email real_template...")
+    print(f"⏱️  Delay giữa các email: {delay} giây\n")
+    
+    success_count = 0
+    fail_count = 0
+    
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender_email, password)
+            print("✅ Đăng nhập SMTP thành công!\n")
+            
+            for i in range(count):
+                # Tạo message mới cho mỗi email
+                message = MIMEMultipart("alternative")
+                message["Subject"] = "New Inquiry Lead from Real Estate Japan"
+                message["From"] = sender_email
+                message["To"] = receiver_email
+                
+                # Gắn HTML vào email
+                part = MIMEText(real_template, "html")
+                message.attach(part)
+                
+                try:
+                    # Gửi email
+                    server.send_message(message)
+                    success_count += 1
+                    print(f"✅ Email {i+1}/{count} đã gửi thành công!")
+                    print(f"   📧 Subject: New Inquiry Lead from Real Estate Japan")
+                    
+                    # Delay giữa các email (trừ email cuối cùng)
+                    if i < count - 1:
+                        print(f"   ⏳ Chờ {delay} giây...\n")
+                        time.sleep(delay)
+                    else:
+                        print()
+                        
+                except Exception as e:
+                    fail_count += 1
+                    print(f"❌ Email {i+1}/{count} gửi thất bại!")
+                    print(f"   Error: {e}\n")
+                    
+    except Exception as e:
+        print(f"❌ Lỗi kết nối SMTP: {e}")
+        return
+    
+    # Tổng kết
+    print("=" * 50)
+    print(f"📊 KẾT QUẢ:")
+    print(f"   ✅ Thành công: {success_count}/{count}")
+    print(f"   ❌ Thất bại: {fail_count}/{count}")
+    print("=" * 50)
 
 
 def send_random_emails(count=1, delay=2):
@@ -522,6 +626,20 @@ def send_random_emails(count=1, delay=2):
 
 # --- Chạy chương trình ---
 if __name__ == "__main__":
+    # Chọn loại email muốn gửi
+    print("Chọn loại email muốn gửi:")
+    print("1. Email ngẫu nhiên")
+    print("2. Email real_template chỉ")
+    
+    try:
+        choice = input("Nhập lựa chọn (1 hoặc 2, mặc định 1): ") or "1"
+        if choice not in ["1", "2"]:
+            print("⚠️  Lựa chọn không hợp lệ. Sử dụng mặc định: Email ngẫu nhiên")
+            choice = "1"
+    except ValueError:
+        print("⚠️  Giá trị không hợp lệ. Sử dụng mặc định: Email ngẫu nhiên")
+        choice = "1"
+    
     # Nhập số lượng email muốn gửi
     try:
         num_emails = int(input("Nhập số lượng email muốn gửi (mặc định 1): ") or "1")
@@ -543,6 +661,9 @@ if __name__ == "__main__":
         delay_seconds = 2
     
     print()
-    send_random_emails(count=num_emails, delay=delay_seconds)
+    if choice == "2":
+        send_real_template_emails(count=num_emails, delay=delay_seconds)
+    else:
+        send_random_emails(count=num_emails, delay=delay_seconds)
     
 # python -m app.tests.read_sync_mail.send_mail
