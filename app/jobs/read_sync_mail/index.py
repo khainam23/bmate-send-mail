@@ -54,6 +54,32 @@ class EmailExtract:
         
         sender_email = (email_match.group(1) or email_match.group(2)).strip().lower()
         return sender_email in self.allowed_senders
+    
+    def _parse_date_to_timestamp(self, date_value):
+        """Convert date (string hoặc int) thành Unix timestamp"""
+        if isinstance(date_value, int):
+            return date_value
+        
+        if not isinstance(date_value, str):
+            return None
+        
+        date_str = date_value.strip()
+        if not date_str:
+            return None
+        
+        # Thử các định dạng khác nhau
+        formats = ['%d/%m/%Y', '%m/%d/%Y', '%Y-%m-%d', '%d-%m-%Y', '%B %d, %Y', '%b %d, %Y', '%d %B %Y', '%d %b %Y']
+        
+        for fmt in formats:
+            try:
+                parsed_date = datetime.strptime(date_str, fmt)
+                # Convert to timestamp
+                timestamp = int(parsed_date.astimezone().timestamp())
+                return timestamp
+            except ValueError:
+                continue
+        
+        return None
         
     def login(self):
         self.mail = imaplib.IMAP4_SSL(self.imap_server)
@@ -286,29 +312,8 @@ class EmailExtract:
             date_match = re.search(pattern, body, re.IGNORECASE)
             if date_match:
                 date_str = date_match.group(1).strip()
-                parsed_date = None
-
-                # thử nhiều định dạng phổ biến
-                for fmt in ['%d/%m/%Y', '%m/%d/%Y', '%Y-%m-%d', '%d-%m-%Y']:
-                    try:
-                        parsed_date = datetime.strptime(date_str, fmt)
-                        break
-                    except ValueError:
-                        continue
-
-                if parsed_date:
-                    # 🔹 Dùng timezone của email_date nếu có
-                    if email_date and email_date.tzinfo is not None:
-                        parsed_date = parsed_date.replace(tzinfo=email_date.tzinfo)
-                        timestamp = int(parsed_date.timestamp())
-                    else:
-                        # nếu không có tzinfo thì coi như naive (local)
-                        timestamp = int(parsed_date.astimezone().timestamp())
-
-                    extracted_data['date'] = timestamp
-                else:
-                    extracted_data['date'] = date_str
-
+                timestamp = self._parse_date_to_timestamp(date_str)
+                extracted_data['date'] = timestamp if timestamp else date_str
                 break
         
         # Trích xuất Content/Inquiry
@@ -528,6 +533,25 @@ class EmailExtract:
             
             url = settings.URL_CALL_CRM_BMATE
             
+            # Parse dates to ensure they're timestamps
+            contact_date = extracted_data.get('contact_date')
+            if isinstance(contact_date, str):
+                parsed = self._parse_date_to_timestamp(contact_date)
+                contact_date = parsed if parsed else int(datetime.now().timestamp())
+            elif contact_date is None:
+                contact_date = int(datetime.now().timestamp())
+            else:
+                contact_date = int(contact_date)
+            
+            date_field = extracted_data.get('date')
+            if isinstance(date_field, str):
+                parsed = self._parse_date_to_timestamp(date_field)
+                date_field = parsed if parsed else int(datetime.now().timestamp())
+            elif date_field is None:
+                date_field = int(datetime.now().timestamp())
+            else:
+                date_field = int(date_field)
+            
             json_data = {
                 "account_manager": 1,
                 "account_name": extracted_data.get('name', ""),
@@ -552,8 +576,8 @@ class EmailExtract:
                     }
                 ],
                 "custom_fields": {
-                    "ngay_khach_contact": extracted_data.get('contact_date') or int(datetime.now().timestamp()),
-                    "ngay_du_kien_vao_nha": extracted_data.get('date') or 0,
+                    "ngay_khach_contact": contact_date,
+                    "ngay_du_kien_vao_nha": date_field,
                     "ngan_sach_tien_thue": extracted_data.get('budget') or 0,
                     "overseas_dang_o_nhat": extracted_data.get('overseas') or "",
                     "nen_tang_lien_he": [
@@ -564,6 +588,8 @@ class EmailExtract:
                     "ghi_chu": extracted_data.get('content', "")
                 }
             }
+            
+            print(json.dumps(json_data))
             
             headers = {
                 "Authorization": f"{access_token}",
