@@ -316,10 +316,8 @@ class EmailExtract:
                 extracted_data['date'] = timestamp if timestamp else date_str
                 break
         
-        # Trích xuất Content/Inquiry
-        inquiry_match = re.search(r'Inquiry:\s*([^\n\r]+)', body, re.IGNORECASE)
-        if inquiry_match:
-            extracted_data['content'] = inquiry_match.group(1).strip()
+        # Trích xuất Content - sử dụng toàn bộ nội dung email
+        extracted_data['content'] = body.strip()
         
         # Trích xuất Visa
         visa_patterns = [
