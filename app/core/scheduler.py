@@ -43,7 +43,7 @@ def start_scheduler():
         
         logger.info("🔧 Adding jobs to scheduler...")
         add_sync_email_1_jobs(scheduler)
-        add_sync_email_2_jobs(scheduler)
+        # add_sync_email_2_jobs(scheduler)
         add_send_mail_jobs(scheduler)
         
         scheduler.start()

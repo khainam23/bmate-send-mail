@@ -80,7 +80,30 @@ class EmailExtract:
                 continue
         
         return None
-        
+    
+    def create_label_if_not_exists(self, label_name="auto_updated"):
+        """Tạo label nếu chưa tồn tại"""
+        try:
+            status, folders = self.mail.list()
+            if status == 'OK':
+                label_exists = any(label_name.encode() in folder for folder in folders)
+                if not label_exists:
+                    self.mail.create(label_name)
+                    logger.info(f"✅ Đã tạo label: {label_name}")
+        except Exception as e:
+            logger.warning(f"⚠️ Không thể tạo label: {e}")
+
+    def _add_label_to_email(self, mail_id, label_name="auto_updated"):
+        """Gán label cho email đã xử lý"""
+        try:
+            # Gmail sử dụng X-GM-LABELS
+            self.mail.store(mail_id, '+X-GM-LABELS', label_name)
+            logger.info(f"✅ Đã gán label '{label_name}' cho email {mail_id.decode()}")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Lỗi khi gán label: {e}")
+            return False
+
     def login(self):
         self.mail = imaplib.IMAP4_SSL(self.imap_server)
         self.mail.login(self.email_account, self.email_password)
@@ -200,6 +223,8 @@ class EmailExtract:
                 
                 if email_date_local >= since_time:
                     filtered_ids.append(mail_id)
+                # filtered_ids.append(mail_id)
+
             except ValueError:
                 # Nếu parse lỗi, vẫn giữ email
                 filtered_ids.append(mail_id)
@@ -234,6 +259,7 @@ class EmailExtract:
                 # Parse email date từ header
                 from email.utils import parsedate_to_datetime
                 email_date = parsedate_to_datetime(date_header)
+                email_date = email_date.astimezone()
             except Exception as e:
                 logger.warning(f"⚠️  Không thể parse email date: {e}")
                 email_date = None
@@ -451,6 +477,7 @@ class EmailExtract:
             extracted_data = self.check_email_format(subject, body, email_date)
             if extracted_data:
                 logger.info(f"✅ Email hợp lệ: {extracted_data.get('name')} ({extracted_data.get('email')})")
+                self._add_label_to_email(mail_id)
                 store_data.append({
                     "email_id": mail_id.decode(),
                     "data": extracted_data,

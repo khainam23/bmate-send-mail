@@ -26,6 +26,7 @@ def sync_email_job(imap_server, email_account, email_password):
         
         # Initialize email extractor and process emails
         email_extractor.login()
+        email_extractor.create_label_if_not_exists()
         email_extractor.read_and_store()
         email_extractor.logout()
         
