@@ -319,13 +319,19 @@ class EmailExtract:
             r'Phone:\s*([^\n\r]+)',
             r'Tel:\s*([^\n\r]+)',
             r'Mobile:\s*([^\n\r]+)',
-            r'Contact\s+Number:\s*([^\n\r]+)'
+            r'Contact\s+Number:\s*([^\n\r]+)',
         ]
+
+        extracted_data['phone'] = ""  # mặc định nếu không tìm thấy
+
         for pattern in phone_patterns:
-            phone_match = re.search(pattern, body, re.IGNORECASE)
-            if phone_match:
-                extracted_data['phone'] = phone_match.group(1).strip()
+            match = re.search(pattern, body, re.IGNORECASE)
+            if match:
+                extracted_data['phone'] = match.group(1).strip()
                 break
+
+        if not re.fullmatch(r'[0-9+\-\s()]{5,}', extracted_data['phone']):
+            extracted_data['phone'] = ""
         
         # Trích xuất Date (Approximate Move-In Date hoặc các biến thể)
         date_patterns = [
@@ -362,13 +368,20 @@ class EmailExtract:
             r'Budget:\s*([^\n\r]+)',
             r'Rental\s+Budget:\s*([^\n\r]+)',
             r'Price\s+Range:\s*([^\n\r]+)',
-            r'Monthly\s+Rent:\s*([^\n\r]+)'
+            r'Monthly\s+Rent:\s*([^\n\r]+)',
         ]
+
+        extracted_data['budget'] = 0  # mặc định
+
         for pattern in budget_patterns:
-            budget_match = re.search(pattern, body, re.IGNORECASE)
-            if budget_match:
-                extracted_data['budget'] = budget_match.group(1).strip()
+            match = re.search(pattern, body, re.IGNORECASE)
+            if match:
+                extracted_data['budget'] = match.group(1).strip()
                 break
+
+        # Nếu không phải dạng số → đưa về 0
+        if not re.fullmatch(r'[0-9.,]+', extracted_data['budget']):
+            extracted_data['budget'] = 0
         
         # Trích xuất Overseas (Đang ở nước ngoài/Nhật)
         overseas_patterns = [
