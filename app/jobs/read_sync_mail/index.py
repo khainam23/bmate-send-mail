@@ -271,7 +271,12 @@ class EmailExtract:
                 content_type = part.get_content_type()
                 if content_type == "text/html" and "attachment" not in str(part.get("Content-Disposition")):
                     html_body = part.get_payload(decode=True).decode(errors="ignore")
-                    body = re.sub('<[^<]+?>', '', html_body).strip()
+
+                    # Xoá block <style> ... </style> luôn cả nội dung bên trong
+                    html_body = re.sub(r'<style.*?>.*?</style>', '', html_body, flags=re.DOTALL | re.IGNORECASE)
+
+                    # Xoá toàn bộ tag HTML còn lại
+                    body = re.sub(r'<[^>]+>', '', html_body).strip()
                     break
         else:
             if msg.get_content_type() == "text/html":
@@ -348,8 +353,20 @@ class EmailExtract:
                 extracted_data['date'] = timestamp if timestamp else date_str
                 break
         
-        # Trích xuất Content - sử dụng toàn bộ nội dung email
+        # Trích xuất Content - sử dụng toàn bộ nội dung email đã được làm sạch
+        # Xoá footer của email RealEstateJapan
+        body = re.split(r'View all inquiries', body, flags=re.IGNORECASE)[0]
+        body = re.split(r'This is a post-only mailing', body, flags=re.IGNORECASE)[0]
+        body = re.split(r'Kind regards', body, flags=re.IGNORECASE)[0]
+
+        # Xoá nhiều dòng trống liên tiếp (chỉ để lại 1 dòng)
+        body = re.sub(r'\n\s*\n+', '\n', body)
+
+        # Nếu muốn xoá TẤT CẢ dòng trống -> dùng dòng dưới
+        body = '\n'.join(line for line in body.splitlines() if line.strip())
+
         extracted_data['content'] = body.strip()
+
         
         # Trích xuất Visa
         visa_patterns = [
