@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     HOST_IMAP_2: str = 'imap.server'
     EMAIL_ADDRESS_2: str = 'abc@gmail.com'
     EMAIL_PASSWORD_APP_2: str = 'abc'
+
+    HOST_IMAP_3: str = 'imap.server'
+    EMAIL_ADDRESS_3: str = 'abc@gmail.com'
+    EMAIL_PASSWORD_APP_3: str = 'abc'
     
     EMAIL_TIME_RANGE_MINUTES: int = 5  # Lấy email trong N phút gần nhất
     EMAIL_TIME_SEND: int = 1 # Thời gian gửi mail mỗi job
@@ -43,6 +47,11 @@ class Settings(BaseSettings):
     URL_LOGIN_CRM_BMATE: str = 'url login'
     ACCOUNT_ADMIN: str = 'admin@gmail.com'
     PASSWORD_ADMIN: str = 'password'
+
+    # Kintone
+    KINTONE_URL: str = ''
+    KINTONE_API: str = ''
+    KINTONE_APP_ID: str = ''
     
     # Refresh Token
     URL_REFRESH_TOKEN_CRM_BMATE: str = 'url refresh token'

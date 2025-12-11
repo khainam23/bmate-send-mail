@@ -544,32 +544,6 @@ class EmailExtract:
         
     def call_api(self):
         try:
-            session = requests.Session()
-            
-            # Trước tiên cứ login vào
-            response_login = session.post(settings.URL_LOGIN_CRM_BMATE, json={
-                "user_username": settings.ACCOUNT_ADMIN,
-                "user_password": settings.PASSWORD_ADMIN
-            })
-            
-            if response_login.status_code != 200:
-                logger.error(f"❌ Lỗi khi login CRM: Status {response_login.status_code}, Response: {response_login.text[:200]}")
-                return False
-            
-            token = response_login.json().get('token', '')
-            
-            # Sau đó gọi refresh token
-            refresh_token = session.post(settings.URL_REFRESH_TOKEN_CRM_BMATE, json={
-               "refresh_token": token
-            })
-            
-            if refresh_token.status_code != 200:
-                logger.error(f"❌ Lỗi khi refresh token CRM: Status {refresh_token.status_code}, Response: {refresh_token.text[:200]}")
-                return False
-            
-            access_token = refresh_token.json().get('access_token', '')
-            
-             # Cuối cùng là gửi mail          
             collection = mongodb.get_collection(settings.NAME_COLLECTION_MODEL_SEND_MAIL)
             
             extracted_data = collection.find_one(
@@ -643,8 +617,31 @@ class EmailExtract:
                     "ghi_chu": extracted_data.get('content', "")
                 }
             }
+
+            session = requests.Session()
             
-            print(json.dumps(json_data))
+            # Trước tiên cứ login vào
+            response_login = session.post(settings.URL_LOGIN_CRM_BMATE, json={
+                "user_username": settings.ACCOUNT_ADMIN,
+                "user_password": settings.PASSWORD_ADMIN
+            })
+            
+            if response_login.status_code != 200:
+                logger.error(f"❌ Lỗi khi login CRM: Status {response_login.status_code}, Response: {response_login.text[:200]}")
+                return False
+            
+            token = response_login.json().get('token', '')
+            
+            # Sau đó gọi refresh token
+            refresh_token = session.post(settings.URL_REFRESH_TOKEN_CRM_BMATE, json={
+               "refresh_token": token
+            })
+            
+            if refresh_token.status_code != 200:
+                logger.error(f"❌ Lỗi khi refresh token CRM: Status {refresh_token.status_code}, Response: {refresh_token.text[:200]}")
+                return False
+            
+            access_token = refresh_token.json().get('access_token', '')
             
             headers = {
                 "Authorization": f"{access_token}",

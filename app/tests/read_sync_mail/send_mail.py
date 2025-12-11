@@ -12,7 +12,7 @@ sender_email = settings.EMAIL_ADDRESS_2
 receiver_email = settings.EMAIL_ADDRESS_2
 password = settings.EMAIL_PASSWORD_APP_2  # dùng App Password nếu là Gmail
 
-
+ 
 def generate_random_phone():
     """Tạo số điện thoại ngẫu nhiên theo format 8180XXXXXXXX"""
     return f"8180{random.randint(1000, 9999)}{random.randint(1000, 9999)}"

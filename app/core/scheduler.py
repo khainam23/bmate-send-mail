@@ -40,11 +40,13 @@ def start_scheduler():
         # Import and add jobs
         from app.jobs.sync_email_job import add_sync_email_1_jobs, add_sync_email_2_jobs
         from app.jobs.send_mail_job import add_send_mail_jobs
+        from app.jobs.send_kintone_job import add_send_kintone_jobs
         
         logger.info("🔧 Adding jobs to scheduler...")
         add_sync_email_1_jobs(scheduler)
         # add_sync_email_2_jobs(scheduler)
         add_send_mail_jobs(scheduler)
+        add_send_kintone_jobs(scheduler)
         
         scheduler.start()
         logger.info("✅ Scheduler started successfully")
