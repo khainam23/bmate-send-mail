@@ -2,9 +2,8 @@
 Send mail job - Gửi email data lên CRM
 """
 import logging
-from datetime import datetime
 
-from app.jobs.sync_kintone import sendKintone
+from app.jobs.sync_kintone.index import sendKintone
 from app.core.config import settings
 from app.db.mongodb import mongodb
 
